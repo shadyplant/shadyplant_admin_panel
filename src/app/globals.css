@@ -1,8 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --admin-canvas: #f3f6ef;
+  --admin-surface: #eef3e9;
+  --admin-chip: #f7faf4;
+  --admin-line: #d7e0d1;
+  --admin-line-strong: #bfd0b5;
+  --admin-ink: #18311a;
+  --admin-muted: #617362;
+  --admin-accent: #235f31;
+  --admin-accent-soft: #e7f2e5;
+  --admin-warm: #cf6c2c;
+  --background: #f3f6ef;
+  --foreground: #18311a;
 }
 
 @theme inline {
@@ -12,15 +22,67 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--admin-canvas);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top right, rgba(197, 231, 186, 0.55), transparent 28%),
+    linear-gradient(180deg, #f8fbf4 0%, #f2f6ed 100%);
+  color: var(--admin-ink);
+  font-family: var(--font-geist-sans), "Segoe UI", sans-serif;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+.admin-scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(97, 115, 98, 0.45) transparent;
+}
+
+.admin-scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.admin-scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-scrollbar-thin::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(97, 115, 98, 0.38);
+}
+
+.admin-scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(97, 115, 98, 0.55);
 }
