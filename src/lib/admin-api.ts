@@ -166,10 +166,25 @@ export type AdminOrder = {
   paymentDetails?: Record<string, unknown>;
   currentStatus?: string;
   pricing: Record<string, unknown>;
-  trackingTimeline?: Array<Record<string, unknown>>;
+  trackingTimeline?: AdminOrderTrackingGroup[];
   recommendedItems?: Array<Record<string, unknown>>;
   createdAt: string;
   updatedAt?: string;
+};
+
+export type AdminOrderTrackingEntry = {
+  id: string;
+  message: string;
+  timestamp: string;
+};
+
+export type AdminOrderTrackingGroup = {
+  key: string;
+  title: string;
+  description: string;
+  state: string;
+  occurredAt?: string | null;
+  entries: AdminOrderTrackingEntry[];
 };
 
 export type AdminTransaction = {

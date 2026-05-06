@@ -10,7 +10,6 @@ import {
   AdminInfoList,
   AdminPanel,
   AdminSelect,
-  AdminTextarea,
 } from "@/components/admin/AdminUi";
 import { FormField, FormGrid, inputClassName } from "@/components/admin/Forms";
 import type { AdminOrder, ApiResponse } from "@/lib/admin-api";
@@ -34,7 +33,10 @@ type OrderFormState = {
   email: string;
   phoneNumber: string;
   deliveryDate: string;
+  currentStatus: string;
   paymentStatus: string;
+  trackingEventStatus: string;
+  trackingEventMessage: string;
   deliveryAddress: string;
   vehicle: string;
   orderItems: string;
@@ -42,6 +44,31 @@ type OrderFormState = {
   deliveryLocation: string;
   pricing: string;
 };
+
+const orderStatusOptions = [
+  { value: "confirmed", label: "Order confirmed" },
+  { value: "shipped", label: "Shipped" },
+  { value: "out_for_delivery", label: "Out for delivery" },
+  { value: "delivered", label: "Delivered" },
+] as const;
+
+function formatOrderStatusLabel(status: string) {
+  return (
+    orderStatusOptions.find((option) => option.value === status)?.label ||
+    status.replaceAll("_", " ")
+  );
+}
+
+function applyPrimaryStatus(
+  form: OrderFormState,
+  status: string,
+): OrderFormState {
+  return {
+    ...form,
+    currentStatus: status,
+    trackingEventStatus: status,
+  };
+}
 
 function mapOrderToForm(order: AdminOrder): OrderFormState {
   return {
@@ -51,7 +78,10 @@ function mapOrderToForm(order: AdminOrder): OrderFormState {
     deliveryDate: order.deliveryDate
       ? new Date(order.deliveryDate).toISOString().slice(0, 16)
       : "",
+    currentStatus: order.currentStatus || "confirmed",
     paymentStatus: order.paymentStatus || "",
+    trackingEventStatus: order.currentStatus || "confirmed",
+    trackingEventMessage: "",
     deliveryAddress: prettyJson(order.deliveryAddress || {}),
     vehicle: prettyJson(order.vehicle || {}),
     orderItems: prettyJson(order.orderItems || []),
@@ -67,7 +97,10 @@ function buildPayload(form: OrderFormState) {
     email: form.email.trim(),
     phoneNumber: form.phoneNumber.trim(),
     deliveryDate: form.deliveryDate ? new Date(form.deliveryDate).toISOString() : undefined,
+    currentStatus: form.currentStatus.trim(),
     paymentStatus: form.paymentStatus.trim(),
+    trackingEventStatus: form.trackingEventStatus.trim(),
+    trackingEventMessage: form.trackingEventMessage.trim(),
     deliveryAddress: safeJsonParse(form.deliveryAddress, {}, normalizeObjectRecord),
     vehicle: safeJsonParse(form.vehicle, {}, normalizeObjectRecord),
     orderItems: safeJsonParse(form.orderItems, [], normalizeObjectArray),
@@ -198,7 +231,7 @@ export default function OrderEditorPage({ orderId }: OrderEditorPageProps) {
       <AdminPageHeader
         eyebrow="Order Detail"
         title={order.orderNumber}
-        description="Update core order contact data, payment status, delivery date, item payloads, and supporting operational JSON."
+        description="Update core order contact data, payment status, and delivery scheduling from one place."
       />
 
       <AdminPanel>
@@ -207,7 +240,9 @@ export default function OrderEditorPage({ orderId }: OrderEditorPageProps) {
             { label: "Tracking", value: order.trackingCode || "Not assigned" },
             {
               label: "Current status",
-              value: order.currentStatus || order.paymentStatus || "Not available",
+              value: order.currentStatus
+                ? formatOrderStatusLabel(order.currentStatus)
+                : order.paymentStatus || "Not available",
             },
             {
               label: "Created",
@@ -225,12 +260,66 @@ export default function OrderEditorPage({ orderId }: OrderEditorPageProps) {
         <AdminPanel>
           <div className="mb-5 rounded-[1.2rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] px-4 py-4">
             <p className="text-sm font-semibold text-[var(--admin-ink)]">
-              Quick payment actions
+              Quick fulfillment actions
             </p>
             <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)]">
-              The backend currently supports updating payment state and structured order payload fields. The delivery progress timeline below is derived from server data and is not directly editable from this panel yet.
+              Order progress is controlled from admin. Changing the primary
+              fulfillment status updates the customer-facing order stage and
+              triggers the status email for that primary stage.
+            </p>
+            <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--admin-muted)]">
+              Primary order status
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
+              {orderStatusOptions.map((status) => (
+                <button
+                  key={status.value}
+                  type="button"
+                  onClick={() => setForm(applyPrimaryStatus(form, status.value))}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    form.currentStatus === status.value
+                      ? "border-[var(--admin-accent)] bg-[var(--admin-accent-soft)] text-[var(--admin-accent)]"
+                      : "border-[var(--admin-line-strong)] bg-white text-[var(--admin-ink)] hover:bg-[var(--admin-chip)]"
+                  }`}
+                >
+                  {status.label}
+                </button>
+              ))}
+            </div>
+            <div className="mt-5 grid gap-4 rounded-[1rem] border border-[var(--admin-line)] bg-white p-4 md:grid-cols-[220px_minmax(0,1fr)]">
+              <FormField label="Add timeline note under status">
+                <AdminSelect
+                  value={form.trackingEventStatus}
+                  onChange={(event) =>
+                    setForm({ ...form, trackingEventStatus: event.target.value })
+                  }
+                >
+                  {orderStatusOptions.map((status) => (
+                    <option key={status.value} value={status.value}>
+                      {status.label}
+                    </option>
+                  ))}
+                </AdminSelect>
+              </FormField>
+              <FormField label="Timeline update note">
+                <input
+                  value={form.trackingEventMessage}
+                  onChange={(event) =>
+                    setForm({ ...form, trackingEventMessage: event.target.value })
+                  }
+                  className={inputClassName()}
+                  placeholder="Fresh carpet grass is being cut, packed, and staged."
+                />
+              </FormField>
+            </div>
+            <p className="mt-2 text-xs text-[var(--admin-muted)]">
+              Timeline notes do not change the primary order status unless you
+              also update the primary status above.
+            </p>
+            <p className="mt-5 text-sm font-semibold text-[var(--admin-ink)]">
+              Quick payment actions
+            </p>
+            <div className="mt-3 flex flex-wrap gap-3">
               {["pending", "paid", "failed", "cash_on_delivery", "pay_on_delivery"].map(
                 (status) => (
                   <button
@@ -284,6 +373,20 @@ export default function OrderEditorPage({ orderId }: OrderEditorPageProps) {
                 }
                 className={inputClassName()}
               />
+            </FormField>
+            <FormField label="Current fulfillment status">
+              <AdminSelect
+                value={form.currentStatus}
+                onChange={(event) =>
+                  setForm(applyPrimaryStatus(form, event.target.value))
+                }
+              >
+                {orderStatusOptions.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
+              </AdminSelect>
             </FormField>
             <FormField label="Payment status">
               <AdminSelect
@@ -341,80 +444,45 @@ export default function OrderEditorPage({ orderId }: OrderEditorPageProps) {
           </div>
         </AdminPanel>
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          <AdminPanel>
-            <FormField label="Delivery address JSON">
-              <AdminTextarea
-                value={form.deliveryAddress}
-                onChange={(event) =>
-                  setForm({ ...form, deliveryAddress: event.target.value })
-                }
-              />
-            </FormField>
-            <FormField label="Vehicle JSON">
-              <AdminTextarea
-                value={form.vehicle}
-                onChange={(event) => setForm({ ...form, vehicle: event.target.value })}
-                className="mt-5"
-              />
-            </FormField>
-            <FormField label="Delivery location JSON">
-              <AdminTextarea
-                value={form.deliveryLocation}
-                onChange={(event) =>
-                  setForm({ ...form, deliveryLocation: event.target.value })
-                }
-                className="mt-5"
-              />
-            </FormField>
-          </AdminPanel>
-
-          <AdminPanel>
-            <FormField label="Order items JSON">
-              <AdminTextarea
-                value={form.orderItems}
-                onChange={(event) => setForm({ ...form, orderItems: event.target.value })}
-              />
-            </FormField>
-            <FormField label="Billing details JSON">
-              <AdminTextarea
-                value={form.billingDetails}
-                onChange={(event) =>
-                  setForm({ ...form, billingDetails: event.target.value })
-                }
-                className="mt-5"
-              />
-            </FormField>
-            <FormField label="Pricing JSON">
-              <AdminTextarea
-                value={form.pricing}
-                onChange={(event) => setForm({ ...form, pricing: event.target.value })}
-                className="mt-5"
-              />
-            </FormField>
-          </AdminPanel>
-        </div>
-
         {Array.isArray(order.trackingTimeline) && order.trackingTimeline.length ? (
           <AdminPanel>
             <p className="text-lg font-black tracking-[-0.04em] text-[var(--admin-ink)]">
               Tracking history
             </p>
             <div className="mt-5 space-y-3">
-              {order.trackingTimeline.map((step: Record<string, unknown>, index: number) => (
+              {order.trackingTimeline.map((step, index: number) => (
                 <div
-                  key={`${String(step.status || "step")}-${index}`}
+                  key={`${step.key}-${index}`}
                   className="rounded-[1.2rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] px-4 py-4"
                 >
-                  <p className="text-sm font-bold text-[var(--admin-ink)]">
-                    {String(step.title || step.status || "Timeline event")}
-                  </p>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-sm font-bold text-[var(--admin-ink)]">
+                      {step.title}
+                    </p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--admin-muted)]">
+                      {step.occurredAt ? formatAdminDate(step.occurredAt) : "Pending"}
+                    </p>
+                  </div>
                   <p className="mt-1 text-sm text-[var(--admin-muted)]">
-                    {String(step.description || "No details available")}
+                    {step.description || "No details available"}
                   </p>
-                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--admin-muted)]">
-                    {formatAdminDate(String(step.date || step.createdAt || ""))}
-                  </p>
+                  {Array.isArray(step.entries) && step.entries.length ? (
+                    <div className="mt-4 space-y-3">
+                      {step.entries.map((entry) => (
+                        <div
+                          key={entry.id}
+                          className="rounded-[0.95rem] border border-[var(--admin-line)] bg-white px-3 py-3"
+                        >
+                          <p className="text-sm font-medium text-[var(--admin-ink)]">
+                            {entry.message}
+                          </p>
+                          <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                            {formatAdminDate(entry.timestamp)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               ))}
             </div>
