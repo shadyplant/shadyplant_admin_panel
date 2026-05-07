@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Check, Circle, Clock3 } from "lucide-react";
 import { useAdminAuth } from "@/components/admin/AdminAuthProvider";
 import { AdminErrorCard, AdminLoadingCard } from "@/components/admin/AdminDataState";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -19,6 +20,7 @@ import {
   normalizeObjectArray,
   normalizeObjectRecord,
   prettyJson,
+  resolveDeliveryCharge,
   resolveOrderTotal,
   safeJsonParse,
 } from "@/lib/admin-utils";
@@ -68,6 +70,22 @@ function applyPrimaryStatus(
     currentStatus: status,
     trackingEventStatus: status,
   };
+}
+
+function isReachedTrackingStep(state: string | null | undefined) {
+  return state === "complete" || state === "current";
+}
+
+function formatTrackingStepState(state: string | null | undefined) {
+  if (state === "complete") {
+    return "Completed";
+  }
+
+  if (state === "current") {
+    return "Current";
+  }
+
+  return "Pending";
 }
 
 function mapOrderToForm(order: AdminOrder): OrderFormState {
@@ -251,6 +269,10 @@ export default function OrderEditorPage({ orderId }: OrderEditorPageProps) {
             {
               label: "Order total",
               value: formatAdminCurrency(resolveOrderTotal(order.pricing)),
+            },
+            {
+              label: "Delivery charge",
+              value: formatAdminCurrency(resolveDeliveryCharge(order.pricing)),
             },
           ]}
         />
@@ -449,42 +471,90 @@ export default function OrderEditorPage({ orderId }: OrderEditorPageProps) {
             <p className="text-lg font-black tracking-[-0.04em] text-[var(--admin-ink)]">
               Tracking history
             </p>
-            <div className="mt-5 space-y-3">
-              {order.trackingTimeline.map((step, index: number) => (
-                <div
-                  key={`${step.key}-${index}`}
-                  className="rounded-[1.2rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] px-4 py-4"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-sm font-bold text-[var(--admin-ink)]">
-                      {step.title}
-                    </p>
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--admin-muted)]">
-                      {step.occurredAt ? formatAdminDate(step.occurredAt) : "Pending"}
-                    </p>
-                  </div>
-                  <p className="mt-1 text-sm text-[var(--admin-muted)]">
-                    {step.description || "No details available"}
-                  </p>
-                  {Array.isArray(step.entries) && step.entries.length ? (
-                    <div className="mt-4 space-y-3">
-                      {step.entries.map((entry) => (
-                        <div
-                          key={entry.id}
-                          className="rounded-[0.95rem] border border-[var(--admin-line)] bg-white px-3 py-3"
-                        >
-                          <p className="text-sm font-medium text-[var(--admin-ink)]">
-                            {entry.message}
-                          </p>
-                          <p className="mt-1 text-xs text-[var(--admin-muted)]">
-                            {formatAdminDate(entry.timestamp)}
+            <div className="mt-6 space-y-0">
+              {order.trackingTimeline.map((step, index: number, timeline) => {
+                const isReached = isReachedTrackingStep(step.state);
+                const nextStep = timeline[index + 1];
+                const nextStepReached = nextStep
+                  ? isReachedTrackingStep(nextStep.state)
+                  : false;
+
+                return (
+                  <div
+                    key={`${step.key}-${index}`}
+                    className="relative grid gap-4 pb-6 md:grid-cols-[32px_minmax(0,1fr)]"
+                  >
+                    {index !== timeline.length - 1 ? (
+                      <div
+                        className={`absolute left-[15px] top-8 w-px ${nextStepReached ? "bottom-0 bg-[var(--admin-accent)]" : "bottom-0 bg-[var(--admin-line)]"}`}
+                      />
+                    ) : null}
+
+                    <div
+                      className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full border ${
+                        isReached
+                          ? "border-[var(--admin-accent)] bg-[var(--admin-accent)] text-white"
+                          : "border-[var(--admin-line-strong)] bg-white text-[var(--admin-muted)]"
+                      }`}
+                    >
+                      {isReached ? (
+                        <Check size={16} strokeWidth={3} />
+                      ) : step.state === "current" ? (
+                        <Clock3 size={16} />
+                      ) : (
+                        <Circle size={12} fill="currentColor" />
+                      )}
+                    </div>
+
+                    <div className="rounded-[1.2rem] border border-[var(--admin-line)] bg-[linear-gradient(180deg,#ffffff,#f7faf4)] px-4 py-4 shadow-[0_14px_30px_rgba(18,43,16,0.04)]">
+                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-base font-black tracking-[-0.03em] text-[var(--admin-ink)]">
+                              {step.title}
+                            </p>
+                            <span
+                              className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${
+                                step.state === "current"
+                                  ? "bg-[var(--admin-accent-soft)] text-[var(--admin-accent)]"
+                                  : isReached
+                                    ? "bg-[#edf6ea] text-[#256233]"
+                                    : "bg-[var(--admin-chip)] text-[var(--admin-muted)]"
+                              }`}
+                            >
+                              {formatTrackingStepState(step.state)}
+                            </span>
+                          </div>
+                          <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)]">
+                            {step.description || "No details available"}
                           </p>
                         </div>
-                      ))}
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)] md:text-right">
+                          {step.occurredAt ? formatAdminDate(step.occurredAt) : "Pending"}
+                        </p>
+                      </div>
+
+                      {Array.isArray(step.entries) && step.entries.length ? (
+                        <div className="mt-4 space-y-3 border-t border-[var(--admin-line)] pt-4">
+                          {step.entries.map((entry) => (
+                            <div
+                              key={entry.id}
+                              className="rounded-[0.95rem] border border-[var(--admin-line)] bg-white px-3 py-3"
+                            >
+                              <p className="text-sm font-medium text-[var(--admin-ink)]">
+                                {entry.message}
+                              </p>
+                              <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                                {formatAdminDate(entry.timestamp)}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
-                  ) : null}
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           </AdminPanel>
         ) : null}

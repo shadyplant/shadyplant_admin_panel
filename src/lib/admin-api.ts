@@ -24,6 +24,7 @@ export type AdminProduct = {
   name: string;
   category: string;
   price: number;
+  mrp: number;
   weight: number;
   offer: string;
   minOrderQuantity: number;
@@ -77,6 +78,7 @@ export type AdminProductOption = {
   value: number | null;
   note: string;
   price: number | null;
+  mrp: number | null;
   stock: number | null;
   packLabel: string;
   weight: number | null;

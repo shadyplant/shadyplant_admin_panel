@@ -35,6 +35,7 @@ type ProductFormState = {
   name: string;
   category: string;
   price: string;
+  mrp: string;
   weight: string;
   offer: string;
   minOrderQuantity: string;
@@ -59,6 +60,7 @@ type ProductOptionFormState = {
   unit: string;
   note: string;
   price: string;
+  mrp: string;
   stock: string;
   packLabel: string;
   weight: string;
@@ -79,6 +81,7 @@ const emptyForm: ProductFormState = {
   name: "",
   category: "",
   price: "",
+  mrp: "",
   weight: "",
   offer: "",
   minOrderQuantity: "1",
@@ -103,6 +106,7 @@ const emptyOption = (): ProductOptionFormState => ({
   unit: "",
   note: "",
   price: "",
+  mrp: "",
   stock: "",
   packLabel: "",
   weight: "",
@@ -126,6 +130,7 @@ function mapOptionToForm(option: AdminProductOption): ProductOptionFormState {
     unit: option.unit || "",
     note: option.note || "",
     price: option.price === null || option.price === undefined ? "" : String(option.price),
+    mrp: option.mrp === null || option.mrp === undefined ? "" : String(option.mrp),
     stock: option.stock === null || option.stock === undefined ? "" : String(option.stock),
     packLabel: option.packLabel || "",
     weight: option.weight === null || option.weight === undefined ? "" : String(option.weight),
@@ -152,6 +157,7 @@ function mapProductToForm(product: AdminProduct): ProductFormState {
     name: product.name || "",
     category: product.category || "",
     price: String(product.price ?? ""),
+    mrp: String(product.mrp ?? product.price ?? ""),
     weight: String(product.weight ?? ""),
     offer: product.offer || "",
     minOrderQuantity: String(product.minOrderQuantity ?? 1),
@@ -222,6 +228,11 @@ function normalizeOptionForPayload(option: ProductOptionFormState): AdminProduct
   const parsedPrice = Number(option.price);
   const price =
     Number.isFinite(parsedPrice) && parsedPrice >= 0 ? parsedPrice : null;
+  const parsedMrp = Number(option.mrp);
+  const mrp =
+    Number.isFinite(parsedMrp) && parsedMrp >= 0
+      ? Math.max(parsedMrp, price ?? 0)
+      : price;
   const parsedStock = Number(option.stock);
   const stock =
     Number.isFinite(parsedStock) && parsedStock >= 0
@@ -242,6 +253,7 @@ function normalizeOptionForPayload(option: ProductOptionFormState): AdminProduct
     unit,
     note: option.note.trim(),
     price,
+    mrp,
     stock,
     packLabel: option.packLabel.trim(),
     weight,
@@ -297,6 +309,7 @@ function buildPayload(form: ProductFormState) {
     name: form.name.trim(),
     category: form.category.trim(),
     price: Number(form.price || 0),
+    mrp: Math.max(Number(form.mrp || 0), Number(form.price || 0)),
     weight: Number(form.weight || 0),
     offer: form.offer.trim(),
     minOrderQuantity: Number(form.minOrderQuantity || 1),
@@ -648,7 +661,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                 required
               />
             </FormField>
-            <FormField label="Price">
+            <FormField label="Rate">
               <input
                 type="number"
                 min="0"
@@ -656,6 +669,17 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                 onChange={(event) => setForm({ ...form, price: event.target.value })}
                 className={inputClassName()}
                 placeholder="699"
+                required
+              />
+            </FormField>
+            <FormField label="MRP">
+              <input
+                type="number"
+                min="0"
+                value={form.mrp}
+                onChange={(event) => setForm({ ...form, mrp: event.target.value })}
+                className={inputClassName()}
+                placeholder="899"
                 required
               />
             </FormField>
@@ -993,7 +1017,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                                 placeholder="100-sq-ft"
                               />
                             </FormField>
-                            <FormField label="Option price">
+                            <FormField label="Option rate">
                               <input
                                 type="number"
                                 min="0"
@@ -1006,6 +1030,21 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                                 }
                                 className={inputClassName()}
                                 placeholder="699"
+                              />
+                            </FormField>
+                            <FormField label="Option MRP">
+                              <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                value={option.mrp}
+                                onChange={(event) =>
+                                  updateOption(groupIndex, optionIndex, {
+                                    mrp: event.target.value,
+                                  })
+                                }
+                                className={inputClassName()}
+                                placeholder="899"
                               />
                             </FormField>
                             <FormField label="Option stock">

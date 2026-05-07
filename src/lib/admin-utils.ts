@@ -112,6 +112,29 @@ export function resolveOrderTotal(pricing: Record<string, unknown> | null | unde
   return 0;
 }
 
+export function resolveDeliveryCharge(
+  pricing: Record<string, unknown> | null | undefined,
+) {
+  const source = pricing || {};
+  const keys = [
+    "deliveryCharge",
+    "shippingSubtotal",
+    "transportCharge",
+    "shippingCharge",
+    "deliveryAmount",
+  ];
+
+  for (const key of keys) {
+    const amount = Number(source[key]);
+
+    if (Number.isFinite(amount) && amount >= 0) {
+      return amount;
+    }
+  }
+
+  return 0;
+}
+
 export function getStatusTone(status: string | null | undefined) {
   const normalizedStatus = String(status || "").trim().toLowerCase();
 

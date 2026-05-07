@@ -358,7 +358,7 @@ export default function HomeCategoryEditorPage({
                     backgroundImage: `linear-gradient(135deg, ${form.accentFrom}, ${form.accentVia}, ${form.accentTo})`,
                   }}
                 >
-                  <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white">
+                  <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white">
                     {form.showOfferBadge ? (
                       <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_top,#ff9d8b_0%,#ff6f67_62%,#ff5a5a_100%)] text-[2.1rem] font-black text-white">
                         %
