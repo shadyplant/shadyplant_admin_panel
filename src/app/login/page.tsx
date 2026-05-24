@@ -7,7 +7,6 @@ import { adminRequest, type AdminStaff, type ApiResponse } from "@/lib/admin-api
 
 type SetupStatusResponse = ApiResponse<{ isSetupComplete: boolean }>;
 type SetupResponse = ApiResponse<{
-  accessToken: string;
   staff: AdminStaff;
   expiresIn: string;
 }>;
@@ -79,7 +78,7 @@ export default function LoginPage() {
           }),
         });
 
-        setSession(response.data.accessToken, response.data.staff);
+        setSession(response.data.staff);
         setSetupRequired(false);
       } else {
         await login(email.trim(), password);

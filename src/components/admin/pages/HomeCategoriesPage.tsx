@@ -14,6 +14,7 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import {
   AdminActionButton,
   AdminPanel,
+  AdminPill,
   AdminStatusPill,
   AdminTextInput,
 } from "@/components/admin/AdminUi";
@@ -24,7 +25,7 @@ export default function HomeCategoriesPage() {
   const { authorizedRequest, staff } = useAdminAuth();
   const [items, setItems] = useState<AdminHomeCategoryItem[]>([]);
   const [query, setQuery] = useState("");
-  const [pageSize, setPageSize] = useState(8);
+  const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -145,7 +146,7 @@ export default function HomeCategoriesPage() {
       <AdminPageHeader
         eyebrow="Homepage Merchandising"
         title="Home Category Bar"
-        description="Manage the story-style category chips shown below the header on the storefront home page."
+        description="Manage the category items shown on the storefront home page."
         actionLabel={allowCatalogEdits ? "Add Item" : undefined}
         actionHref={allowCatalogEdits ? "/home-categories/new" : undefined}
       />
@@ -161,9 +162,10 @@ export default function HomeCategoriesPage() {
             placeholder="Search by label, key, or href"
             className="max-w-xl"
           />
-          <p className="text-sm font-semibold text-[var(--admin-muted)]">
-            {items.length} home bar items
-          </p>
+          <div className="flex items-center gap-3">
+            <AdminPill>{items.length} total</AdminPill>
+            <AdminPill>{items.filter((item) => item.isActive).length} active</AdminPill>
+          </div>
         </div>
       </AdminPanel>
 
@@ -174,75 +176,139 @@ export default function HomeCategoriesPage() {
         />
       ) : (
         <div className="space-y-4">
-          <div className="grid gap-4 xl:grid-cols-2">
-            {paginatedItems.map((item) => (
-              <AdminPanel key={item.id} className="p-0 overflow-hidden">
-                <div className="grid gap-4 p-5 md:grid-cols-[108px_minmax(0,1fr)]">
-                  <div
-                    className="relative flex aspect-square items-center justify-center overflow-hidden rounded-[1.4rem] p-[2px]"
-                    style={{
-                      backgroundImage: `linear-gradient(135deg, ${item.accentFrom}, ${item.accentVia}, ${item.accentTo})`,
-                    }}
-                  >
-                    <div className="relative h-full w-full overflow-hidden rounded-[1.3rem] bg-white">
-                      {item.showOfferBadge ? (
-                        <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_top,#ff9d8b_0%,#ff6f67_62%,#ff5a5a_100%)] text-white text-4xl font-black">
-                          %
-                        </div>
-                      ) : item.image ? (
-                        <Image
-                          src={item.image}
-                          alt={item.label}
-                          fill
-                          className="object-cover"
-                          sizes="120px"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-xs font-semibold text-[var(--admin-muted)]">
-                          No image
-                        </div>
-                      )}
-                    </div>
-                  </div>
+          <AdminPanel className="overflow-hidden p-0">
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-[var(--admin-line)] bg-[#f8faf6] text-left">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Item
+                    </th>
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Link
+                    </th>
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Style
+                    </th>
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedItems.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="border-b border-[var(--admin-line)] align-top transition hover:bg-[#fbfdf8]"
+                    >
+                      <td className="px-4 py-4">
+                        <div className="flex min-w-[240px] items-start gap-3">
+                          <div
+                            className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[0.9rem] p-[2px]"
+                            style={{
+                              backgroundImage: `linear-gradient(135deg, ${item.accentFrom}, ${item.accentVia}, ${item.accentTo})`,
+                            }}
+                          >
+                            <div className="relative h-full w-full overflow-hidden rounded-[0.8rem] bg-white">
+                              {item.showOfferBadge ? (
+                                <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_top,#ff9d8b_0%,#ff6f67_62%,#ff5a5a_100%)] text-white text-xl font-black">
+                                  %
+                                </div>
+                              ) : item.image ? (
+                                <Image
+                                  src={item.image}
+                                  alt={item.label}
+                                  fill
+                                  className="object-cover"
+                                  sizes="56px"
+                                />
+                              ) : (
+                                <div className="flex h-full items-center justify-center text-[10px] font-semibold text-[var(--admin-muted)]">
+                                  No image
+                                </div>
+                              )}
+                            </div>
+                          </div>
 
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                          {item.itemKey}
-                        </p>
-                        <h2 className="mt-2 text-xl font-black tracking-[-0.04em] text-[var(--admin-ink)]">
-                          {item.label}
-                        </h2>
-                        <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)] break-all">
-                          {item.href}
-                        </p>
-                      </div>
-                      <AdminStatusPill status={item.isActive ? "active" : "disabled"} />
-                    </div>
-
-                    <div className="mt-5 flex flex-wrap items-center gap-3">
-                      <Link
-                        href={`/home-categories/${item.id}`}
-                        className="inline-flex items-center justify-center rounded-full bg-[var(--admin-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
-                      >
-                        Edit item
-                      </Link>
-                      {allowCatalogEdits ? (
-                        <AdminActionButton
-                          tone="danger"
-                          onClick={() => handleDelete(item)}
-                          disabled={deletingId === item.id}
-                        >
-                          {deletingId === item.id ? "Deleting..." : "Delete"}
-                        </AdminActionButton>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-              </AdminPanel>
-            ))}
-          </div>
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+                              {item.itemKey}
+                            </p>
+                            <h2 className="mt-1 text-sm font-black text-[var(--admin-ink)]">
+                              {item.label}
+                            </h2>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {item.showOfferBadge ? <AdminPill>Offer badge</AdminPill> : null}
+                              {item.sortOrder > 0 ? (
+                                <AdminPill>Order {item.sortOrder}</AdminPill>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="min-w-[240px]">
+                          <p className="break-all text-sm text-[var(--admin-muted)]">
+                            {item.href}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="min-w-[220px] space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="h-4 w-4 rounded-full border border-white shadow-[0_0_0_1px_rgba(24,49,26,0.08)]"
+                              style={{ backgroundColor: item.accentFrom }}
+                            />
+                            <span
+                              className="h-4 w-4 rounded-full border border-white shadow-[0_0_0_1px_rgba(24,49,26,0.08)]"
+                              style={{ backgroundColor: item.accentVia }}
+                            />
+                            <span
+                              className="h-4 w-4 rounded-full border border-white shadow-[0_0_0_1px_rgba(24,49,26,0.08)]"
+                              style={{ backgroundColor: item.accentTo }}
+                            />
+                          </div>
+                          <p className="text-xs text-[var(--admin-muted)]">
+                            {item.image ? "Image item" : item.showOfferBadge ? "Badge item" : "No media"}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="min-w-[120px]">
+                          <AdminStatusPill
+                            status={item.isActive ? "active" : "disabled"}
+                          />
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex min-w-[180px] flex-col gap-2">
+                          <Link
+                            href={`/home-categories/${item.id}`}
+                            className="inline-flex items-center justify-center rounded-full bg-[var(--admin-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
+                          >
+                            Edit item
+                          </Link>
+                          {allowCatalogEdits ? (
+                            <AdminActionButton
+                              tone="danger"
+                              onClick={() => handleDelete(item)}
+                              disabled={deletingId === item.id}
+                            >
+                              {deletingId === item.id ? "Deleting..." : "Delete"}
+                            </AdminActionButton>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </AdminPanel>
 
           <AdminPagination
             page={page}

@@ -19,7 +19,7 @@ import {
 } from "@/components/admin/AdminUi";
 import type { AdminStaff, ApiResponse } from "@/lib/admin-api";
 import { formatCompactDate } from "@/lib/admin-utils";
-import { canManageTeam } from "@/lib/admin-permissions";
+import { canManageTeam, getStaffRoleRank } from "@/lib/admin-permissions";
 
 export default function TeamPage() {
   const { authorizedRequest, staff: currentStaff } = useAdminAuth();
@@ -136,6 +136,7 @@ export default function TeamPage() {
     page * pageSize,
   );
   const allowTeamManagement = canManageTeam(currentStaff?.role);
+  const currentStaffRoleRank = getStaffRoleRank(currentStaff?.role);
 
   if (loading) {
     return <AdminLoadingCard label="Loading team accounts..." />;
@@ -212,14 +213,29 @@ export default function TeamPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                  <Link
-                    href={`/team/${member.id}`}
-                    className="inline-flex items-center justify-center rounded-full bg-[var(--admin-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
-                  >
-                    Manage account
-                  </Link>
-                  {allowTeamManagement && currentStaff?.id !== member.id ? (
+                {(() => {
+                  const canManageMember =
+                    allowTeamManagement &&
+                    currentStaff?.id !== member.id &&
+                    currentStaffRoleRank > getStaffRoleRank(member.role);
+
+                  return (
+                    <div className="flex flex-wrap items-center gap-3">
+                      {canManageMember ? (
+                        <Link
+                          href={`/team/${member.id}`}
+                          className="inline-flex items-center justify-center rounded-full bg-[var(--admin-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
+                        >
+                          Manage account
+                        </Link>
+                      ) : (
+                        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--admin-muted)]">
+                          {currentStaff?.id === member.id
+                            ? "Your account"
+                            : "Higher access role"}
+                        </span>
+                      )}
+                      {canManageMember ? (
                     <AdminActionButton
                       tone="danger"
                       onClick={() => handleDelete(member)}
@@ -227,8 +243,10 @@ export default function TeamPage() {
                     >
                       {deletingId === member.id ? "Deleting..." : "Delete"}
                     </AdminActionButton>
-                  ) : null}
-                </div>
+                      ) : null}
+                    </div>
+                  );
+                })()}
               </div>
             </AdminPanel>
           ))}

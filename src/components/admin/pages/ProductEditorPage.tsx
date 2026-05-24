@@ -17,6 +17,7 @@ import {
 import { FormField, FormGrid, inputClassName, textareaClassName } from "@/components/admin/Forms";
 import type {
   AdminProduct,
+  AdminProductDetailSection,
   AdminProductStockAlert,
   AdminProductVideoClip,
   AdminProductOption,
@@ -34,6 +35,9 @@ type ProductFormState = {
   id: string;
   name: string;
   category: string;
+  variety: string;
+  containerSize: string;
+  height: string;
   price: string;
   mrp: string;
   weight: string;
@@ -51,6 +55,7 @@ type ProductFormState = {
   videoClips: ProductVideoClipFormState[];
   tags: string;
   optionGroups: ProductOptionGroupFormState[];
+  detailSections: ProductDetailSectionFormState[];
 };
 
 type ProductOptionFormState = {
@@ -76,10 +81,18 @@ type ProductOptionGroupFormState = {
   options: ProductOptionFormState[];
 };
 
+type ProductDetailSectionFormState = {
+  title: string;
+  description: string;
+};
+
 const emptyForm: ProductFormState = {
   id: "",
   name: "",
   category: "",
+  variety: "",
+  containerSize: "",
+  height: "",
   price: "",
   mrp: "",
   weight: "",
@@ -97,6 +110,7 @@ const emptyForm: ProductFormState = {
   videoClips: [],
   tags: "",
   optionGroups: [],
+  detailSections: [],
 };
 
 const emptyOption = (): ProductOptionFormState => ({
@@ -151,11 +165,23 @@ function mapOptionGroupToForm(group: AdminProductOptionGroup): ProductOptionGrou
   };
 }
 
+function mapDetailSectionToForm(
+  section: AdminProductDetailSection,
+): ProductDetailSectionFormState {
+  return {
+    title: section.title || "",
+    description: section.description || "",
+  };
+}
+
 function mapProductToForm(product: AdminProduct): ProductFormState {
   return {
     id: product.id || "",
     name: product.name || "",
     category: product.category || "",
+    variety: product.variety || "",
+    containerSize: product.containerSize || "",
+    height: product.height || "",
     price: String(product.price ?? ""),
     mrp: String(product.mrp ?? product.price ?? ""),
     weight: String(product.weight ?? ""),
@@ -187,6 +213,9 @@ function mapProductToForm(product: AdminProduct): ProductFormState {
     tags: toCommaSeparatedValue(product.tags || []),
     optionGroups: Array.isArray(product.optionGroups)
       ? product.optionGroups.map(mapOptionGroupToForm)
+      : [],
+    detailSections: Array.isArray(product.detailSections)
+      ? product.detailSections.map(mapDetailSectionToForm)
       : [],
   };
 }
@@ -303,11 +332,35 @@ function normalizeOptionGroupsForPayload(groups: ProductOptionGroupFormState[]) 
   });
 }
 
+function normalizeDetailSectionsForPayload(
+  sections: ProductDetailSectionFormState[],
+) {
+  return sections.flatMap((section, index) => {
+    const title = section.title.trim();
+    const description = section.description.trim();
+
+    if (!title || !description) {
+      return [];
+    }
+
+    return [
+      {
+        title,
+        description,
+        sortOrder: index,
+      },
+    ];
+  });
+}
+
 function buildPayload(form: ProductFormState) {
   return {
     id: form.id.trim() || undefined,
     name: form.name.trim(),
     category: form.category.trim(),
+    variety: form.variety.trim(),
+    containerSize: form.containerSize.trim(),
+    height: form.height.trim(),
     price: Number(form.price || 0),
     mrp: Math.max(Number(form.mrp || 0), Number(form.price || 0)),
     weight: Number(form.weight || 0),
@@ -327,6 +380,7 @@ function buildPayload(form: ProductFormState) {
       .filter((clip): clip is AdminProductVideoClip => Boolean(clip)),
     tags: splitCommaSeparatedValues(form.tags),
     optionGroups: normalizeOptionGroupsForPayload(form.optionGroups),
+    detailSections: normalizeDetailSectionsForPayload(form.detailSections),
   };
 }
 
@@ -430,6 +484,40 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
           options: nextOptions.length ? nextOptions : [emptyOption()],
         };
       }),
+    }));
+  }
+
+  function updateDetailSection(
+    sectionIndex: number,
+    updates: Partial<ProductDetailSectionFormState>,
+  ) {
+    setForm((current) => ({
+      ...current,
+      detailSections: current.detailSections.map((section, index) =>
+        index === sectionIndex ? { ...section, ...updates } : section,
+      ),
+    }));
+  }
+
+  function addDetailSection() {
+    setForm((current) => ({
+      ...current,
+      detailSections: [
+        ...current.detailSections,
+        {
+          title: "",
+          description: "",
+        },
+      ],
+    }));
+  }
+
+  function removeDetailSection(sectionIndex: number) {
+    setForm((current) => ({
+      ...current,
+      detailSections: current.detailSections.filter(
+        (_, index) => index !== sectionIndex,
+      ),
     }));
   }
 
@@ -652,6 +740,32 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                 required
               />
             </FormField>
+            <FormField label="Variety">
+              <input
+                value={form.variety}
+                onChange={(event) => setForm({ ...form, variety: event.target.value })}
+                className={inputClassName()}
+                placeholder="Thai Variegated"
+              />
+            </FormField>
+            <FormField label="Container size">
+              <input
+                value={form.containerSize}
+                onChange={(event) =>
+                  setForm({ ...form, containerSize: event.target.value })
+                }
+                className={inputClassName()}
+                placeholder="6*6 Bags"
+              />
+            </FormField>
+            <FormField label="Height">
+              <input
+                value={form.height}
+                onChange={(event) => setForm({ ...form, height: event.target.value })}
+                className={inputClassName()}
+                placeholder="2 ft Height"
+              />
+            </FormField>
             <FormField label="Badge">
               <input
                 value={form.badge}
@@ -702,7 +816,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                 placeholder="Flat 20% off"
               />
             </FormField>
-            <FormField label="Min order quantity">
+            <FormField label="Min Qty">
               <input
                 type="number"
                 min="1"
@@ -815,6 +929,81 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                 required
               />
             </FormField>
+          </div>
+
+          <div className="mt-5 rounded-[1.2rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] p-4 md:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-base font-bold text-[var(--admin-ink)]">
+                  Product detail sections
+                </p>
+                <p className="mt-1 text-sm text-[var(--admin-muted)]">
+                  Add storefront sections like Product Description, Maintenance Guide, or any custom title with editable text.
+                </p>
+              </div>
+              <AdminActionButton
+                type="button"
+                tone="secondary"
+                onClick={addDetailSection}
+                disabled={!allowCatalogEdits}
+              >
+                Add section
+              </AdminActionButton>
+            </div>
+
+            {form.detailSections.length ? (
+              <div className="mt-5 space-y-4">
+                {form.detailSections.map((section, sectionIndex) => (
+                  <div
+                    key={`detail-section-${sectionIndex}`}
+                    className="rounded-[1rem] border border-[var(--admin-line)] bg-white p-4"
+                  >
+                    <div className="grid gap-4 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+                      <FormField label="Section title">
+                        <input
+                          value={section.title}
+                          onChange={(event) =>
+                            updateDetailSection(sectionIndex, {
+                              title: event.target.value,
+                            })
+                          }
+                          className={inputClassName()}
+                          placeholder="Maintenance Guide"
+                        />
+                      </FormField>
+                      <FormField label="Section description">
+                        <textarea
+                          value={section.description}
+                          onChange={(event) =>
+                            updateDetailSection(sectionIndex, {
+                              description: event.target.value,
+                            })
+                          }
+                          className={textareaClassName()}
+                          placeholder="Add the storefront text for this section."
+                          rows={4}
+                        />
+                      </FormField>
+                    </div>
+
+                    <div className="mt-4 flex justify-end">
+                      <AdminActionButton
+                        type="button"
+                        tone="danger"
+                        onClick={() => removeDetailSection(sectionIndex)}
+                        disabled={!allowCatalogEdits}
+                      >
+                        Remove section
+                      </AdminActionButton>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-5 text-sm text-[var(--admin-muted)]">
+                No product detail sections added yet.
+              </p>
+            )}
           </div>
 
           <div className="mt-5 rounded-[1.2rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] p-4 md:p-5">

@@ -23,6 +23,9 @@ export type AdminProduct = {
   productId: string;
   name: string;
   category: string;
+  variety: string;
+  containerSize: string;
+  height: string;
   price: number;
   mrp: number;
   weight: number;
@@ -40,8 +43,41 @@ export type AdminProduct = {
   videoClips: AdminProductVideoClip[];
   tags: string[];
   optionGroups: AdminProductOptionGroup[];
+  detailSections: AdminProductDetailSection[];
   stockAlertCount: number;
   stockAlerts?: AdminProductStockAlert[];
+};
+
+export type AdminProductStockAdjustment = {
+  operation: "add" | "adjust";
+  quantity: number;
+  delta: number;
+  previousStock: number;
+  currentStock: number;
+  reason: string | null;
+  note?: string | null;
+  adjustedAt: string;
+};
+
+export type AdminProductStockAdjustmentLog = {
+  id: string;
+  productId: string;
+  productReference: string;
+  productName: string;
+  operation: string;
+  quantity: number;
+  delta: number;
+  reason: string;
+  note: string;
+  previousStock: number;
+  currentStock: number;
+  actor: {
+    staffAccountId: string;
+    email: string;
+    role: string;
+  };
+  createdAt: string;
+  updatedAt?: string | null;
 };
 
 export type AdminProductStockAlert = {
@@ -94,6 +130,12 @@ export type AdminProductOptionGroup = {
   options: AdminProductOption[];
 };
 
+export type AdminProductDetailSection = {
+  title: string;
+  description: string;
+  sortOrder: number;
+};
+
 export type AdminService = {
   id: string;
   organizationId: string;
@@ -130,12 +172,25 @@ export type AdminHomeCategoryItem = {
   updatedAt?: string;
 };
 
+export type AdminHomeSliderBanner = {
+  id: string;
+  organizationId: string;
+  itemKey: string;
+  title: string;
+  href: string;
+  desktopImage: string;
+  mobileImage: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type AdminReview = {
   id: string;
   productId: string;
   userId: string;
   rating: number;
-  title: string;
   body: string;
   status: string;
   authorName: string;
@@ -144,6 +199,11 @@ export type AdminReview = {
   helpfulCount: number;
   createdAt: string;
   updatedAt: string;
+  adminReply?: {
+    body: string;
+    authorName: string;
+    updatedAt?: string | null;
+  } | null;
 };
 
 export type AdminOrder = {
@@ -166,7 +226,27 @@ export type AdminOrder = {
   paymentStatus: string;
   paymentStatusLabel?: string;
   paymentDetails?: Record<string, unknown>;
+  refundAccountDetails?: {
+    accountHolderName?: string;
+    bankName?: string;
+    accountNumber?: string;
+    ifscCode?: string;
+  } | null;
+  refundRequestStatus?:
+    | "pending_submission"
+    | "submitted"
+    | "resubmit_required"
+    | "refunded"
+    | null;
+  refundRequestNote?: string;
+  refundSubmittedAt?: string | null;
+  refundResubmitRequestedAt?: string | null;
   currentStatus?: string;
+  cancellationReason?: string;
+  cancellationNote?: string;
+  cancelledAt?: string | null;
+  refundReason?: string;
+  refundedAt?: string | null;
   pricing: Record<string, unknown>;
   trackingTimeline?: AdminOrderTrackingGroup[];
   recommendedItems?: Array<Record<string, unknown>>;
@@ -233,6 +313,65 @@ export type AdminTransactionSummary = {
   onlinePendingAmount: number;
 };
 
+export type AdminSalesReportItem = {
+  sNo: number;
+  itemName: string;
+  hsnSac?: string | null;
+  quantity: number;
+  unit?: string | null;
+  pricePerUnit: number;
+  taxablePricePerUnit?: number;
+  finalRate: number;
+  discount?: number;
+  discountPercent?: string | null;
+  amount: number;
+};
+
+export type AdminSalesReportRow = {
+  id: string;
+  orderId: string;
+  paymentAttemptId?: string | null;
+  createdAt: string;
+  date: string;
+  orderNo?: string | number | null;
+  invoiceNo: string | number;
+  partyName: string;
+  gstin?: string | null;
+  partyPhone?: string | null;
+  transactionType: string;
+  total: number;
+  paymentType?: string | null;
+  received: number;
+  balanceDue: number;
+  dueDate?: string | null;
+  status: "Paid" | "Overdue" | string;
+  overdueDays?: number;
+  items: AdminSalesReportItem[];
+  discount?: number;
+  discountPercent?: string | null;
+  shippingCharge?: number;
+  paymentStatus?: string | null;
+  currentStatus?: string | null;
+  provider?: string | null;
+};
+
+export type AdminSalesReportSummary = {
+  totalRecords: number;
+  totalSale: number;
+  totalReceived: number;
+  totalOutstanding: number;
+  paidCount: number;
+  overdueCount: number;
+};
+
+export type AdminSalesReportPayload = {
+  generatedOn: string;
+  durationFrom: string | null;
+  durationTo: string | null;
+  transactions: AdminSalesReportRow[];
+  summary: AdminSalesReportSummary;
+};
+
 export type AdminCustomer = {
   id: string;
   fullName: string;
@@ -241,10 +380,182 @@ export type AdminCustomer = {
   authProvider: string;
   profileImage?: string | null;
   isVerified: boolean;
+  isVip: boolean;
+  paymentAccess: {
+    cashOnDelivery: boolean;
+    onlinePayment: boolean;
+    emi: boolean;
+  };
+  customerCategory: "normal" | "nursery_owner" | "garden_contractor";
+  accountStatus: "active" | "banned_temporary" | "banned_permanent";
+  bannedUntil?: string | null;
+  banReason?: string;
   deliveryAddress: Record<string, unknown>;
   billingDetails: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
+};
+
+export type AdminCustomerCartItem = {
+  id: string;
+  productId: string;
+  variantId?: string;
+  variantLabel?: string;
+  packLabel?: string;
+  name: string;
+  image?: string;
+  category?: string;
+  quantity: number;
+  unitPrice?: number | null;
+  unitMrp?: number | null;
+  currency?: string;
+  addedAt?: string;
+  updatedAt?: string;
+};
+
+export type AdminCustomerCart = {
+  items: AdminCustomerCartItem[];
+  summary: {
+    itemCount: number;
+    totalQuantity: number;
+    subtotal: number;
+    currency: string;
+  };
+  updatedAt?: string | null;
+};
+
+export type AdminCheckoutPreview = {
+  summary: {
+    itemCount: number;
+    totalQuantity: number;
+    totalWeightKg: number;
+    itemsSubtotal: number;
+    currency: string;
+  };
+  pricing: {
+    itemsSubtotal: number;
+    itemsSubtotalAfterCoupon?: number;
+    deliveryCharge: number;
+    totalBeforeCoupon?: number;
+    total: number;
+    couponCode?: string;
+    couponType?: string;
+    couponDiscountValue?: number;
+    couponAdjustAmount?: number;
+    couponDiscountPercent?: number;
+    currency: string;
+    distanceKm: number;
+    deliveryRate: number;
+    totalWeightKg: number;
+  };
+  deliveryChargeDetails: {
+    message: string;
+    rate: number;
+    units: number | null;
+  };
+  suggestedDeliveryDate: string;
+  appliedCoupon?: {
+    id: string;
+    code: string;
+    type: "adjust" | "discount";
+    adjustAmount: number;
+    discountPercent: number;
+    discountValue: number;
+  } | null;
+};
+
+export type AdminPaymentCheckout = {
+  paymentAttemptId: string;
+  status: string;
+  statusLabel: string;
+  provider: string;
+  merchantOrderId: string;
+  gatewayOrderId: string;
+  redirectUrl: string;
+  paymentSessionId?: string;
+  amount: number;
+  currency: string;
+  businessName: string;
+  description: string;
+  prefill: {
+    name?: string;
+    email?: string;
+    contact?: string;
+  };
+  mode: string;
+  returnUrl: string;
+};
+
+export type AdminPaymentAttempt = {
+  id: string;
+  paymentAttemptId: string;
+  status: string;
+  statusLabel: string;
+  orderId: string | null;
+  amount: number;
+  currency: string;
+  paymentMethod: string;
+  paymentMethodLabel?: string;
+  failureReason?: string;
+  provider?: string | null;
+  merchantOrderId?: string | null;
+  gatewayOrderId?: string | null;
+  redirectUrl?: string;
+  paymentSessionId?: string;
+  createdAt: string;
+  updatedAt?: string | null;
+};
+
+export type AdminPaymentGatewayProviderProfile = {
+  provider: string;
+  label: string;
+  isCheckoutConfigured: boolean;
+  isWebhookConfigured: boolean;
+};
+
+export type AdminPaymentGatewaySettings = {
+  activeProvider: string;
+  defaultProvider: string;
+  mode: string;
+  providers: AdminPaymentGatewayProviderProfile[];
+  updatedAt?: string | null;
+  updatedByStaffAccountId?: string | null;
+};
+
+export type AdminCoupon = {
+  id: string;
+  code: string;
+  type: "adjust" | "discount";
+  status: "active" | "inactive" | "used" | "expired";
+  effectiveStatus: "active" | "inactive" | "used" | "expired";
+  adjustAmount: number;
+  discountPercent: number;
+  usageMode: "one_time";
+  totalUsesAllowed: number;
+  totalUsesRedeemed: number;
+  isOneTimeUse: boolean;
+  isRedeemed: boolean;
+  redeemedByUserId?: string | null;
+  redeemedOrderId?: string | null;
+  redeemedAt?: string | null;
+  expiresAt?: string | null;
+  notes: string;
+  createdByStaff?: {
+    id: string;
+    email: string;
+    fullName: string;
+  } | null;
+  preview: {
+    sampleProductTotal: number;
+    sampleDeliveryCharge: number;
+    sampleTotalPayable: number;
+    discountValue: number;
+    adjustedProductTotal: number;
+    adjustedTotalPayable: number;
+    appliesTo: "total_payable" | "product_total";
+  };
+  createdAt: string;
+  updatedAt?: string | null;
 };
 
 export type ApiResponse<T> = {
@@ -412,6 +723,7 @@ export async function adminRequest<T>(
       const response = await fetch(`${baseUrl}${path}`, {
         ...init,
         cache: "no-store",
+        credentials: "include",
         headers,
       });
 

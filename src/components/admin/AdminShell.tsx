@@ -3,60 +3,111 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+  BarChart3,
+  BadgePercent,
+  House,
+  LayoutGrid,
+  LogOut,
+  Package,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ReceiptText,
+  ShieldCheck,
+  ShoppingCart,
+  Settings2,
+  Star,
+  UserCircle2,
+  Users,
+} from "lucide-react";
 import { useAdminAuth } from "@/components/admin/AdminAuthProvider";
 import {
   canViewCatalog,
+  canViewCoupons,
   canViewCustomers,
   canViewOrders,
   canViewReviews,
+  canViewSettings,
   canViewTeam,
   canViewTransactions,
 } from "@/lib/admin-permissions";
 import type { AdminOrder, ApiResponse } from "@/lib/admin-api";
 
+const SIDEBAR_COLLAPSE_STORAGE_KEY = "ggn_admin_sidebar_collapsed";
+const ORDER_NOTIFICATION_STORAGE_KEY = "ggn_admin_last_seen_order_marker";
+const ORDER_POLL_INTERVAL_MS = 20000;
+
 const navItems = [
-  { href: "/", label: "Dashboard", short: "DB", canAccess: () => true },
+  { href: "/", label: "Dashboard", icon: House, canAccess: () => true },
   {
     href: "/products",
     label: "Products",
-    short: "PR",
+    icon: Package,
     canAccess: canViewCatalog,
   },
   {
     href: "/home-categories",
     label: "Home Bar",
-    short: "HB",
+    icon: LayoutGrid,
     canAccess: canViewCatalog,
   },
   {
-    href: "/services",
-    label: "Services",
-    short: "SV",
+    href: "/home-slider-banners",
+    label: "Home Slider",
+    icon: LayoutGrid,
     canAccess: canViewCatalog,
+  },
+  {
+    href: "/coupons",
+    label: "Coupons",
+    icon: BadgePercent,
+    canAccess: canViewCoupons,
   },
   {
     href: "/transactions",
     label: "Transactions",
-    short: "TX",
+    icon: ReceiptText,
     canAccess: canViewTransactions,
   },
-  { href: "/orders", label: "Orders", short: "OR", canAccess: canViewOrders },
+  {
+    href: "/sales-report",
+    label: "Sales Report",
+    icon: BarChart3,
+    canAccess: canViewOrders,
+  },
+  {
+    href: "/orders",
+    label: "Orders",
+    icon: ShoppingCart,
+    canAccess: canViewOrders,
+  },
   {
     href: "/customers",
     label: "Customers",
-    short: "CU",
+    icon: Users,
     canAccess: canViewCustomers,
+  },
+  {
+    href: "/settings/payment-gateway",
+    label: "Gateway",
+    icon: Settings2,
+    canAccess: canViewSettings,
   },
   {
     href: "/reviews",
     label: "Reviews",
-    short: "RV",
+    icon: Star,
     canAccess: canViewReviews,
   },
-  { href: "/team", label: "Team", short: "TM", canAccess: canViewTeam },
-];
-const ORDER_NOTIFICATION_STORAGE_KEY = "ggn_admin_last_seen_order_marker";
-const ORDER_POLL_INTERVAL_MS = 20000;
+  { href: "/team", label: "Team", icon: ShieldCheck, canAccess: canViewTeam },
+  { href: "/profile", label: "Profile", icon: UserCircle2, canAccess: () => true },
+] satisfies Array<{
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  canAccess: (role: string) => boolean;
+}>;
 
 type OrderMarker = {
   id: string;
@@ -154,6 +205,20 @@ function announceNewOrder(message: string) {
   window.speechSynthesis.speak(utterance);
 }
 
+function getStaffInitials(name: string | null | undefined) {
+  const parts = String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2);
+
+  if (!parts.length) {
+    return "A";
+  }
+
+  return parts.map((part) => part[0]?.toUpperCase() || "").join("");
+}
+
 export default function AdminShell({
   children,
 }: {
@@ -163,6 +228,14 @@ export default function AdminShell({
   const router = useRouter();
   const { hydrated, isAuthenticated, staff, logout, authorizedRequest } = useAdminAuth();
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return window.localStorage.getItem(SIDEBAR_COLLAPSE_STORAGE_KEY) === "true";
+  });
   const isOrderWatcherReadyRef = useRef(false);
   const snackbarTimerRef = useRef<number | null>(null);
   const latestOrderMarkerRef = useRef<OrderMarker | null>(null);
@@ -184,6 +257,13 @@ export default function AdminShell({
       }
     };
   }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      SIDEBAR_COLLAPSE_STORAGE_KEY,
+      String(isSidebarCollapsed),
+    );
+  }, [isSidebarCollapsed]);
 
   useEffect(() => {
     if (!hydrated || !isAuthenticated || !staff || !canViewOrders(staff.role)) {
@@ -302,82 +382,133 @@ export default function AdminShell({
   const visibleNavItems = navItems.filter((item) => item.canAccess(staff.role));
 
   return (
-    <div className="h-screen overflow-hidden bg-[var(--admin-canvas)] text-[var(--admin-ink)]">
-      <div className="mx-auto grid h-full max-w-[1600px] lg:grid-cols-[280px_minmax(0,1fr)]">
+    <div className="h-screen overflow-hidden bg-[#eef1eb] text-[var(--admin-ink)]">
+      <div
+        className="mx-auto grid h-full max-w-[1600px] lg:transition-[grid-template-columns] lg:duration-300"
+        style={{
+          gridTemplateColumns: isSidebarCollapsed
+            ? "96px minmax(0, 1fr)"
+            : "280px minmax(0, 1fr)",
+        }}
+      >
         <aside className="min-h-0 border-r border-[var(--admin-line)] bg-[var(--admin-surface)] lg:sticky lg:top-0 lg:h-screen">
           <div className="admin-scrollbar-thin flex h-full min-h-0 flex-col overflow-y-auto px-5 py-6 [scrollbar-width:thin] [scrollbar-color:rgba(97,115,98,0.42)_transparent] [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar]:h-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(97,115,98,0.38)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(97,115,98,0.55)]">
-            <div className="shrink-0 rounded-[0.5rem] bg-[linear-gradient(145deg,#133c20,#205d2c)] text-center py-2  text-white shadow-[0_24px_60px_rgba(19,60,32,0.28)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">
-                Grass Green Nursery
-              </p>
+            <div className="flex shrink-0 items-center gap-2 rounded-[0.9rem] bg-[linear-gradient(145deg,#133c20,#205d2c)] px-3 py-3 text-white shadow-[0_24px_60px_rgba(19,60,32,0.28)]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/14">
+                <LayoutGrid className="h-[18px] w-[18px]" />
+              </div>
+              {!isSidebarCollapsed ? (
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">
+                    Grass Green Nursery
+                  </p>
+                  <p className="truncate text-sm font-semibold text-white">
+                    Admin Panel
+                  </p>
+                </div>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setIsSidebarCollapsed((value) => !value)}
+                className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/18 lg:inline-flex"
+                aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {isSidebarCollapsed ? (
+                  <PanelLeftOpen className="h-[18px] w-[18px]" />
+                ) : (
+                  <PanelLeftClose className="h-[18px] w-[18px]" />
+                )}
+              </button>
             </div>
 
             <nav className="admin-scrollbar-thin mt-6 flex-1 space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(97,115,98,0.42)_transparent] [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar]:h-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(97,115,98,0.38)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(97,115,98,0.55)]">
               {visibleNavItems.map((item) => {
                 const active = isActivePath(pathname, item.href);
+                const Icon = item.icon;
 
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-3 rounded-[1.2rem] px-3 py-3 text-sm font-semibold transition ${
+                    className={`flex items-center rounded-[1.2rem] px-3 py-3 text-sm font-semibold transition ${
+                      isSidebarCollapsed ? "justify-center" : "gap-3"
+                    } ${
                       active
                         ? "bg-[var(--admin-accent-soft)] text-[var(--admin-accent)]"
                         : "text-[var(--admin-muted)] hover:bg-white hover:text-[var(--admin-ink)]"
                     }`}
+                    aria-label={item.label}
+                    title={isSidebarCollapsed ? item.label : undefined}
                   >
                     <span
-                      className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-[11px] font-black tracking-[0.16em] ${
+                      className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
                         active
                           ? "bg-[var(--admin-accent)] text-white"
                           : "bg-[var(--admin-chip)] text-[var(--admin-muted)]"
                       }`}
                     >
-                      {item.short}
+                      <Icon className="h-[18px] w-[18px]" />
                     </span>
-                    <span>{item.label}</span>
+                    {!isSidebarCollapsed ? <span>{item.label}</span> : null}
                   </Link>
                 );
               })}
             </nav>
 
-            {/*  */}
-            <div className="mt-4 shrink-0 rounded-[1.15rem] border border-[var(--admin-line)] bg-white p-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
-                Signed in
-              </p>
-              <p className="mt-1.5 text-base font-bold text-[var(--admin-ink)]">
-                {staff.fullName}
-              </p>
-              <p className="mt-0.5 text-sm text-[var(--admin-muted)]">
-                {staff.email}
-              </p>
-
-              <div className="mt-3 flex items-center justify-between rounded-[0.85rem] bg-[var(--admin-chip)] px-3 py-1.5">
-                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                  Role
-                </span>
-                <span className="rounded-full bg-white px-2.5 py-0.5 text-xs font-bold uppercase tracking-[0.14em] text-[var(--admin-accent)]">
-                  {staff.role}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  logout();
-                  router.replace("/login");
-                }}
-                className="mt-3 w-full rounded-full border border-[var(--admin-line-strong)] px-4 py-2 text-sm font-semibold text-[var(--admin-ink)] transition hover:bg-[var(--admin-chip)]"
+            <div className="mt-3 shrink-0">
+              <div
+                className={`rounded-[1.4rem] border border-[var(--admin-line)] bg-white px-2 py-2 shadow-[0_6px_18px_rgba(18,43,16,0.05)] ${
+                  isSidebarCollapsed ? "space-y-2" : "flex items-center gap-2"
+                }`}
               >
-                Log out
-              </button>
+                <Link
+                  href="/profile"
+                  className={`flex rounded-full px-2 py-1 transition hover:bg-[var(--admin-chip)] ${
+                    isSidebarCollapsed ? "justify-center" : "min-w-0 flex-1 items-center gap-3"
+                  }`}
+                  aria-label="Open profile"
+                  title={isSidebarCollapsed ? "Profile" : undefined}
+                >
+                  <div className={`flex items-center ${isSidebarCollapsed ? "justify-center" : "min-w-0 flex-1 gap-3"}`}>
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--admin-chip)] text-sm font-black tracking-[0.08em] text-[var(--admin-line-strong)]">
+                      {getStaffInitials(staff.fullName)}
+                    </span>
+                    {!isSidebarCollapsed ? (
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-[var(--admin-ink)]">
+                          {staff.fullName}
+                        </p>
+                        <p className="truncate text-xs uppercase tracking-[0.14em] text-[var(--admin-muted)]">
+                          {staff.role}
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setIsLogoutConfirmOpen(true)}
+                  className={`inline-flex shrink-0 items-center justify-center rounded-full border border-[#efc7c1] bg-[#fff5f3] text-sm font-semibold text-[#b24336] transition hover:bg-[#ffecea] ${
+                    isSidebarCollapsed ? "h-10 w-full px-0" : "px-4 py-2"
+                  }`}
+                  aria-label="Open log out confirmation"
+                  title="Log out"
+                >
+                  {isSidebarCollapsed ? (
+                    <LogOut className="h-[18px] w-[18px]" />
+                  ) : (
+                    "Log out"
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </aside>
 
-        <main className="admin-scrollbar-thin min-h-0 min-w-0 overflow-y-auto px-4 py-4 [scrollbar-width:thin] [scrollbar-color:rgba(97,115,98,0.42)_transparent] [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar]:h-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(97,115,98,0.38)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(97,115,98,0.55)] sm:px-6 lg:h-screen lg:px-8 lg:py-6">
-          <div className="min-h-full rounded-[2rem] border border-white/70 bg-white/88 p-4 shadow-[0_30px_80px_rgba(16,40,17,0.08)] backdrop-blur sm:p-6 lg:p-8">
+        <main className="admin-scrollbar-thin min-h-0 min-w-0 overflow-y-auto bg-[#eef1eb] px-4 py-4 [scrollbar-width:thin] [scrollbar-color:rgba(97,115,98,0.42)_transparent] [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar]:h-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(97,115,98,0.38)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(97,115,98,0.55)] sm:px-5 lg:h-screen lg:px-6 lg:py-5">
+          <div className="min-h-full">
             {children}
           </div>
         </main>
@@ -413,6 +544,43 @@ export default function AdminShell({
               >
                 Open order
               </Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isLogoutConfirmOpen ? (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-[rgba(15,24,12,0.16)] px-4">
+          <div className="w-full max-w-sm rounded-[1rem] border border-[#efc7c1] bg-white p-5 shadow-[0_20px_50px_rgba(20,30,18,0.16)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b24336]">
+              Confirm logout
+            </p>
+            <h2 className="mt-2 text-lg font-bold text-[var(--admin-ink)]">
+              Are you sure to log out?
+            </h2>
+            <p className="mt-2 text-sm text-[var(--admin-muted)]">
+              You will need to sign in again to access the admin workspace.
+            </p>
+
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsLogoutConfirmOpen(false)}
+                className="rounded-full border border-[var(--admin-line)] px-4 py-2 text-sm font-semibold text-[var(--admin-ink)] transition hover:bg-[var(--admin-chip)]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsLogoutConfirmOpen(false);
+                  logout();
+                  router.replace("/login");
+                }}
+                className="rounded-full bg-[#b24336] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#9b362b]"
+              >
+                Log out
+              </button>
             </div>
           </div>
         </div>

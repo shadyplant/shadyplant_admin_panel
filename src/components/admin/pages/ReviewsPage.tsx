@@ -15,6 +15,7 @@ import {
   AdminSelect,
   AdminStatusPill,
   AdminTextInput,
+  AdminTextarea,
 } from "@/components/admin/AdminUi";
 import type { AdminReview, ApiResponse } from "@/lib/admin-api";
 import { formatAdminDate } from "@/lib/admin-utils";
@@ -29,6 +30,15 @@ export default function ReviewsPage() {
   const [loading, setLoading] = useState(true);
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+
+  function syncReplyDrafts(nextReviews: AdminReview[]) {
+    setReplyDrafts(
+      Object.fromEntries(
+        nextReviews.map((review) => [review.id, review.adminReply?.body || ""]),
+      ),
+    );
+  }
 
   async function loadReviews() {
     setLoading(true);
@@ -42,6 +52,7 @@ export default function ReviewsPage() {
             : `/admin/reviews?status=${encodeURIComponent(statusFilter)}`,
         );
       setReviews(response.data.reviews);
+      syncReplyDrafts(response.data.reviews);
     } catch (nextError) {
       setError(
         nextError instanceof Error ? nextError.message : "Unable to load reviews.",
@@ -68,6 +79,7 @@ export default function ReviewsPage() {
 
         if (!cancelled) {
           setReviews(response.data.reviews);
+          syncReplyDrafts(response.data.reviews);
         }
       } catch (nextError) {
         if (!cancelled) {
@@ -120,6 +132,41 @@ export default function ReviewsPage() {
     }
   }
 
+  async function handleSaveReply(reviewId: string) {
+    setActioningId(reviewId);
+
+    try {
+      const response =
+        await authorizedRequest<ApiResponse<{ review: AdminReview }>>(
+          `/admin/reviews/${reviewId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              adminReply: replyDrafts[reviewId] || "",
+            }),
+          },
+        );
+
+      setReviews((currentReviews) =>
+        currentReviews.map((review) =>
+          review.id === reviewId ? response.data.review : review,
+        ),
+      );
+      setReplyDrafts((currentDrafts) => ({
+        ...currentDrafts,
+        [reviewId]: response.data.review.adminReply?.body || "",
+      }));
+    } catch (nextError) {
+      window.alert(
+        nextError instanceof Error
+          ? nextError.message
+          : "Unable to save review reply.",
+      );
+    } finally {
+      setActioningId(null);
+    }
+  }
+
   async function handleDelete(reviewId: string) {
     const shouldDelete = window.confirm("Delete this review permanently?");
 
@@ -149,8 +196,8 @@ export default function ReviewsPage() {
 
   const filteredReviews = reviews.filter((review) =>
     [
-      review.title,
       review.body,
+      review.adminReply?.body,
       review.authorName,
       review.authorLocation,
       review.productId,
@@ -191,7 +238,7 @@ export default function ReviewsPage() {
                 setQuery(event.target.value);
                 setCurrentPage(1);
               }}
-              placeholder="Search by author, title, review body, or product id"
+              placeholder="Search by author, review body, or product id"
               className="max-w-xl"
             />
             <AdminSelect
@@ -227,7 +274,7 @@ export default function ReviewsPage() {
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
                     <h2 className="text-xl font-black tracking-[-0.04em] text-[var(--admin-ink)]">
-                      {review.title || "Untitled review"}
+                      Customer review
                     </h2>
                     <AdminStatusPill status={review.status} />
                   </div>
@@ -242,9 +289,44 @@ export default function ReviewsPage() {
                     {review.rating}/5 rating | {review.verifiedBuyer ? "Verified buyer" : "Unverified"} |{" "}
                     {formatAdminDate(review.createdAt)}
                   </p>
+
+                  <div className="mt-5 rounded-[1rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+                        Store reply
+                      </p>
+                      {review.adminReply?.updatedAt ? (
+                        <p className="text-xs text-[var(--admin-muted)]">
+                          Last updated {formatAdminDate(review.adminReply.updatedAt)}
+                        </p>
+                      ) : null}
+                    </div>
+                    <AdminTextarea
+                      value={replyDrafts[review.id] || ""}
+                      onChange={(event) =>
+                        setReplyDrafts((currentDrafts) => ({
+                          ...currentDrafts,
+                          [review.id]: event.target.value,
+                        }))
+                      }
+                      placeholder="Write a helpful reply for the customer review."
+                      className="mt-3 min-h-[120px] bg-white"
+                      maxLength={1500}
+                    />
+                    <p className="mt-2 text-xs text-[var(--admin-muted)]">
+                      This reply is shown on the storefront under the approved review.
+                    </p>
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+                  <AdminActionButton
+                    tone="secondary"
+                    onClick={() => handleSaveReply(review.id)}
+                    disabled={actioningId === review.id}
+                  >
+                    Save reply
+                  </AdminActionButton>
                   <AdminActionButton
                     tone="primary"
                     onClick={() => handleUpdateStatus(review.id, "approved")}

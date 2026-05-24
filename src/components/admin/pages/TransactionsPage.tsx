@@ -14,8 +14,8 @@ import {
   AdminMetricCard,
   AdminPanel,
   AdminPill,
-  AdminSelect,
   AdminStatusPill,
+  AdminSelect,
   AdminTextInput,
 } from "@/components/admin/AdminUi";
 import type {
@@ -43,6 +43,16 @@ const EMPTY_SUMMARY: AdminTransactionSummary = {
   onlineReceivedAmount: 0,
   onlinePendingAmount: 0,
 };
+
+function formatTransactionLabel(value: string | null | undefined, fallback: string) {
+  const normalizedValue = String(value || "").trim();
+
+  if (!normalizedValue) {
+    return fallback;
+  }
+
+  return normalizedValue.replaceAll("_", " ");
+}
 
 export default function TransactionsPage() {
   const { authorizedRequest } = useAdminAuth();
@@ -257,128 +267,183 @@ export default function TransactionsPage() {
         />
       ) : (
         <div className="space-y-4">
-          {paginatedTransactions.map((transaction) => {
-            const title =
-              transaction.orderNumber ||
-              transaction.paymentAttemptId ||
-              "Unlinked transaction";
-            const secondaryStatus =
-              transaction.checkoutStatus &&
-              transaction.checkoutStatus !== transaction.paymentStatus
-                ? transaction.checkoutStatus
-                : "";
+          <AdminPanel className="overflow-hidden p-0">
+            <div className="overflow-x-auto admin-scrollbar-thin">
+              <table className="min-w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-[var(--admin-line)] bg-[#f8faf6] text-left">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Transaction
+                    </th>
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Customer
+                    </th>
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Amount
+                    </th>
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Gateway
+                    </th>
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Processed
+                    </th>
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedTransactions.map((transaction) => {
+                    const title =
+                      transaction.orderNumber ||
+                      transaction.paymentAttemptId ||
+                      "Unlinked transaction";
+                    const secondaryStatus =
+                      transaction.checkoutStatus &&
+                      transaction.checkoutStatus !== transaction.paymentStatus
+                        ? transaction.checkoutStatus
+                        : "";
 
-            return (
-              <div
-                key={transaction.id}
-                className="rounded-[1.6rem] border border-[var(--admin-line)] bg-white p-5 shadow-[0_18px_40px_rgba(18,43,16,0.05)]"
-              >
-                <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <AdminPill>{transaction.sourceLabel}</AdminPill>
-                      {transaction.currentStatus ? (
-                        <AdminPill>{transaction.currentStatus.replaceAll("_", " ")}</AdminPill>
-                      ) : null}
-                    </div>
-
-                    <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
-                      {title}
-                    </p>
-                    <h2 className="mt-2 text-xl font-black tracking-[-0.04em] text-[var(--admin-ink)]">
-                      {transaction.customerName}
-                    </h2>
-                    <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)]">
-                      {transaction.customerEmail || "No email"} |{" "}
-                      {transaction.customerPhone || "No phone"} |{" "}
-                      {formatAdminDate(transaction.createdAt)}
-                    </p>
-
-                    <div className="mt-4 flex flex-wrap items-center gap-2">
-                      <AdminStatusPill status={transaction.paymentStatus} />
-                      {secondaryStatus ? (
-                        <AdminStatusPill status={secondaryStatus} />
-                      ) : null}
-                      <AdminPill>
-                        {transaction.paymentMethodLabel ||
-                          transaction.paymentMethod.replaceAll("_", " ")}
-                      </AdminPill>
-                    </div>
-                  </div>
-
-                  <div className="min-w-[220px] rounded-[1.3rem] bg-[var(--admin-chip)] px-4 py-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
-                      Transaction amount
-                    </p>
-                    <p className="mt-2 text-2xl font-black tracking-[-0.05em] text-[var(--admin-accent)]">
-                      {formatAdminCurrency(transaction.amount)}
-                    </p>
-                    <p className="mt-2 text-sm text-[var(--admin-muted)]">
-                      {transaction.isMoneyReceived
-                        ? `Received ${formatAdminCurrency(transaction.receivedAmount)}`
-                        : `Outstanding ${formatAdminCurrency(transaction.outstandingAmount)}`}
-                    </p>
-                    {transaction.orderId ? (
-                      <Link
-                        href={`/orders/${transaction.orderId}`}
-                        className="mt-4 inline-flex text-sm font-semibold text-[var(--admin-accent)]"
+                    return (
+                      <tr
+                        key={transaction.id}
+                        className="border-b border-[var(--admin-line)] align-top transition hover:bg-[#fbfdf8]"
                       >
-                        Open linked order
-                      </Link>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  <div className="rounded-[1rem] bg-[var(--admin-chip)] px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                      Gateway order ID
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-[var(--admin-ink)]">
-                      {transaction.gatewayOrderId || "Not available"}
-                    </p>
-                  </div>
-                  <div className="rounded-[1rem] bg-[var(--admin-chip)] px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                      Gateway payment ID
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-[var(--admin-ink)]">
-                      {transaction.gatewayPaymentId || "Not available"}
-                    </p>
-                  </div>
-                  <div className="rounded-[1rem] bg-[var(--admin-chip)] px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                      Processed at
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-[var(--admin-ink)]">
-                      {transaction.processedAt
-                        ? formatAdminDate(transaction.processedAt)
-                        : "Not processed yet"}
-                    </p>
-                  </div>
-                  <div className="rounded-[1rem] bg-[var(--admin-chip)] px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                      Provider
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-[var(--admin-ink)]">
-                      {transaction.provider || "Not available"}
-                    </p>
-                  </div>
-                </div>
-
-                {transaction.failureReason ? (
-                  <div className="mt-4 rounded-[1rem] border border-[#f2d1cb] bg-[#fff5f2] px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#a15545]">
-                      Failure reason
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-[#8a483b]">
-                      {transaction.failureReason}
-                    </p>
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
+                        <td className="px-4 py-4">
+                          <div className="min-w-[220px]">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <AdminPill>{transaction.sourceLabel}</AdminPill>
+                              {transaction.currentStatus ? (
+                                <AdminPill>
+                                  {formatTransactionLabel(
+                                    transaction.currentStatus,
+                                    "Unknown",
+                                  )}
+                                </AdminPill>
+                              ) : null}
+                            </div>
+                            <p className="mt-3 text-sm font-bold text-[var(--admin-ink)]">
+                              {title}
+                            </p>
+                            <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                              Tracking {transaction.trackingCode || "Not available"}
+                            </p>
+                            <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                              Created {formatAdminDate(transaction.createdAt)}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="min-w-[220px]">
+                            <p className="text-sm font-semibold text-[var(--admin-ink)]">
+                              {transaction.customerName || "No customer name"}
+                            </p>
+                            <p className="mt-1 text-sm text-[var(--admin-muted)]">
+                              {transaction.customerPhone || "No phone"}
+                            </p>
+                            <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                              {transaction.customerEmail || "No email"}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="min-w-[170px]">
+                            <p className="text-sm font-black text-[var(--admin-accent)]">
+                              {formatAdminCurrency(transaction.amount)}
+                            </p>
+                            <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                              Received{" "}
+                              {formatAdminCurrency(transaction.receivedAmount)}
+                            </p>
+                            <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                              Outstanding{" "}
+                              {formatAdminCurrency(transaction.outstandingAmount)}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex min-w-[230px] flex-col items-start gap-2">
+                            <AdminStatusPill status={transaction.paymentStatus} />
+                            {secondaryStatus ? (
+                              <AdminStatusPill status={secondaryStatus} />
+                            ) : null}
+                            <AdminPill>
+                              {transaction.paymentMethodLabel ||
+                                formatTransactionLabel(
+                                  transaction.paymentMethod,
+                                  "Unknown method",
+                                )}
+                            </AdminPill>
+                            <span className="text-xs text-[var(--admin-muted)]">
+                              Provider: {transaction.provider || "Not available"}
+                            </span>
+                            {transaction.failureReason ? (
+                              <span className="text-xs text-[#9d3b2d]">
+                                Failed: {transaction.failureReason}
+                              </span>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="min-w-[240px]">
+                            <p className="text-sm font-semibold text-[var(--admin-ink)]">
+                              {transaction.gatewayOrderId || "No gateway order ID"}
+                            </p>
+                            <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                              Payment ID:{" "}
+                              {transaction.gatewayPaymentId || "Not available"}
+                            </p>
+                            {transaction.lastWebhookEvent ? (
+                              <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                                Webhook:{" "}
+                                {formatTransactionLabel(
+                                  transaction.lastWebhookEvent,
+                                  "Unknown",
+                                )}
+                              </p>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="min-w-[160px]">
+                            <p className="text-sm font-semibold text-[var(--admin-ink)]">
+                              {transaction.processedAt
+                                ? formatAdminDate(transaction.processedAt)
+                                : "Not processed yet"}
+                            </p>
+                            <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                              {transaction.isMoneyReceived
+                                ? "Funds captured"
+                                : "Awaiting collection"}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="min-w-[140px]">
+                            {transaction.orderId ? (
+                              <Link
+                                href={`/orders/${transaction.orderId}`}
+                                className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
+                              >
+                                Open order
+                              </Link>
+                            ) : (
+                              <span className="text-xs text-[var(--admin-muted)]">
+                                No linked order
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </AdminPanel>
 
           <AdminPagination
             page={page}

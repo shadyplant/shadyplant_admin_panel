@@ -13,7 +13,7 @@ import {
 } from "@/components/admin/AdminUi";
 import { FormField, FormGrid, inputClassName } from "@/components/admin/Forms";
 import type { AdminStaff, ApiResponse } from "@/lib/admin-api";
-import { canManageTeam } from "@/lib/admin-permissions";
+import { canManageTeam, getStaffRoleRank } from "@/lib/admin-permissions";
 
 type TeamEditorPageProps = {
   staffId?: string;
@@ -68,6 +68,12 @@ export default function TeamEditorPage({ staffId }: TeamEditorPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const allowTeamManagement = canManageTeam(activeStaff?.role);
+  const activeStaffRoleRank = getStaffRoleRank(activeStaff?.role);
+  const editableRoleOptions = roleOptions.filter(
+    (role) => activeStaffRoleRank > getStaffRoleRank(role),
+  );
+  const canManageCurrentStaffAccount =
+    !staffAccount || activeStaffRoleRank > getStaffRoleRank(staffAccount.role);
 
   async function loadStaffAccount() {
     if (!staffId) {
@@ -261,8 +267,9 @@ export default function TeamEditorPage({ staffId }: TeamEditorPageProps) {
               <AdminSelect
                 value={form.role}
                 onChange={(event) => setForm({ ...form, role: event.target.value })}
+                disabled={!allowTeamManagement || !editableRoleOptions.length}
               >
-                {roleOptions.map((role) => (
+                {editableRoleOptions.map((role) => (
                   <option key={role} value={role}>
                     {role}
                   </option>
@@ -309,13 +316,17 @@ export default function TeamEditorPage({ staffId }: TeamEditorPageProps) {
             <div className="mt-5 rounded-[1rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] px-4 py-3 text-sm text-[var(--admin-muted)]">
               Staff account management is limited to manager, admin, and owner roles.
             </div>
+          ) : staffAccount && !canManageCurrentStaffAccount ? (
+            <div className="mt-5 rounded-[1rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] px-4 py-3 text-sm text-[var(--admin-muted)]">
+              Your role cannot edit this staff member because they have equal or higher access.
+            </div>
           ) : null}
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <AdminActionButton
               type="submit"
               tone="primary"
-              disabled={saving || !allowTeamManagement}
+              disabled={saving || !allowTeamManagement || !canManageCurrentStaffAccount}
             >
               {saving ? "Saving..." : staffId ? "Save staff account" : "Create staff account"}
             </AdminActionButton>
@@ -330,7 +341,7 @@ export default function TeamEditorPage({ staffId }: TeamEditorPageProps) {
                 type="button"
                 tone="danger"
                 onClick={handleDelete}
-                disabled={deleting || !allowTeamManagement}
+                disabled={deleting || !allowTeamManagement || !canManageCurrentStaffAccount}
               >
                 {deleting ? "Deleting..." : "Delete staff account"}
               </AdminActionButton>

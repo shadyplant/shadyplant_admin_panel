@@ -1,5 +1,6 @@
 import type {
   ButtonHTMLAttributes,
+  HTMLAttributes,
   InputHTMLAttributes,
   ReactNode,
   SelectHTMLAttributes,
@@ -10,13 +11,14 @@ import { getStatusTone } from "@/lib/admin-utils";
 export function AdminPanel({
   children,
   className = "",
-}: {
+  ...props
+}: HTMLAttributes<HTMLElement> & {
   children: ReactNode;
-  className?: string;
 }) {
   return (
     <section
-      className={`rounded-[1.6rem] border border-[var(--admin-line)] bg-white p-5 shadow-[0_20px_50px_rgba(18,43,16,0.06)] ${className}`}
+      {...props}
+      className={`rounded-[1rem] border border-[var(--admin-line)] bg-white p-4 shadow-[0_6px_18px_rgba(18,43,16,0.04)] ${className}`}
     >
       {children}
     </section>
@@ -33,14 +35,14 @@ export function AdminMetricCard({
   meta: string;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-[var(--admin-line)] bg-[linear-gradient(180deg,#ffffff,#f7faf4)] p-5">
+    <div className="rounded-[1rem] border border-[var(--admin-line)] bg-white p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
         {label}
       </p>
-      <p className="mt-4 text-3xl font-black tracking-[-0.06em] text-[var(--admin-ink)]">
+      <p className="mt-3 text-2xl font-black tracking-[-0.05em] text-[var(--admin-ink)]">
         {value}
       </p>
-      <p className="mt-3 text-sm leading-6 text-[var(--admin-muted)]">{meta}</p>
+      <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)]">{meta}</p>
     </div>
   );
 }

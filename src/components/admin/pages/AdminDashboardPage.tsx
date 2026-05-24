@@ -186,6 +186,12 @@ export default function AdminDashboardPage() {
   const featuredProducts = state.products.filter(
     (product) => product.isFeaturedLatest,
   );
+  const liveOrders = state.orders.filter(
+    (order) => order.currentStatus !== "delivered",
+  );
+  const verifiedCustomers = state.customers.filter(
+    (customer) => customer.isVerified,
+  );
   const recentOrders = [...state.orders]
     .sort(
       (left, right) =>
@@ -200,200 +206,190 @@ export default function AdminDashboardPage() {
         new Date(left.createdAt).getTime(),
     )
     .slice(0, 4);
+  const shortcuts = [
+    { href: "/products", title: "Products", count: state.products.length },
+    { href: "/team", title: "Team", count: state.staff.length },
+    { href: "/reviews", title: "Reviews", count: state.reviews.length },
+  ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <AdminPageHeader
         eyebrow="Operations"
-        title="Control Center"
-        description=""
+        title="Dashboard"
+        description="Overview of catalog, orders, customers, and reviews."
       />
 
-      <div className="grid gap-4 xl:grid-cols-5 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         <AdminMetricCard
           label="Products"
           value={String(state.products.length)}
-          meta={`${featuredProducts.length} featured entries ready for the storefront`}
+          meta={`${featuredProducts.length} featured`}
         />
         <AdminMetricCard
           label="Services"
           value={String(state.services.length)}
-          meta={`${activeServices.length} active services across the organization`}
+          meta={`${activeServices.length} active`}
         />
         <AdminMetricCard
           label="Orders"
           value={String(state.orders.length)}
-          meta={`${state.orders.filter((order) => order.currentStatus !== "delivered").length} still in live fulfillment`}
+          meta={`${liveOrders.length} in progress`}
         />
         <AdminMetricCard
           label="Customers"
           value={String(state.customers.length)}
-          meta={`${state.customers.filter((customer) => customer.isVerified).length} verified customer accounts`}
+          meta={`${verifiedCustomers.length} verified`}
         />
         <AdminMetricCard
-          label="Pending Reviews"
+          label="Reviews"
           value={String(pendingReviews.length)}
-          meta={`${state.staff.length} staff accounts can manage operations`}
+          meta={`${state.reviews.length} total`}
         />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
+      <div className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
         <AdminPanel>
           <AdminSectionTitle
             title="Recent Orders"
-            description="Quick visibility into the latest customer demand and delivery progress."
             action={
               <Link
                 href="/orders"
                 className="text-sm font-semibold text-[var(--admin-accent)]"
               >
-                View all orders
+                View all
               </Link>
             }
           />
-          <div className="mt-5 space-y-3">
-            {recentOrders.map((order) => (
-              <Link
-                key={order.id}
-                href={`/orders/${order.id}`}
-                className="flex flex-col gap-3 rounded-[1.3rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] px-4 py-4 transition hover:border-[var(--admin-line-strong)] hover:bg-white md:flex-row md:items-center md:justify-between"
-              >
-                <div>
-                  <p className="text-sm font-bold text-[var(--admin-ink)]">
-                    {order.orderNumber}
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--admin-muted)]">
-                    {order.fullName} • {order.phoneNumber || "No phone"} •{" "}
-                    {formatCompactDate(order.createdAt)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold text-[var(--admin-ink)]">
-                    {formatAdminCurrency(resolveOrderTotal(order.pricing))}
-                  </span>
-                  <AdminStatusPill
-                    status={order.currentStatus || order.paymentStatus}
-                  />
-                </div>
-              </Link>
-            ))}
+          <div className="mt-4 space-y-2">
+            {recentOrders.length ? (
+              recentOrders.map((order) => (
+                <Link
+                  key={order.id}
+                  href={`/orders/${order.id}`}
+                  className="flex flex-col gap-2 rounded-[0.85rem] px-3 py-3 transition hover:bg-[#f8faf6] md:flex-row md:items-center md:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-[var(--admin-ink)]">
+                      {order.orderNumber}
+                    </p>
+                    <p className="mt-1 truncate text-sm text-[var(--admin-muted)]">
+                      {order.fullName} • {order.phoneNumber || "No phone"} •{" "}
+                      {formatCompactDate(order.createdAt)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-[var(--admin-ink)]">
+                      {formatAdminCurrency(resolveOrderTotal(order.pricing))}
+                    </span>
+                    <AdminStatusPill
+                      status={order.currentStatus || order.paymentStatus}
+                    />
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <p className="px-3 py-4 text-sm text-[var(--admin-muted)]">
+                No recent orders.
+              </p>
+            )}
           </div>
         </AdminPanel>
 
         <AdminPanel>
           <AdminSectionTitle
             title="Moderation Queue"
-            description="Reviews waiting for approval or rejection."
             action={
               <Link
                 href="/reviews"
                 className="text-sm font-semibold text-[var(--admin-accent)]"
               >
-                Open reviews
+                Open
               </Link>
             }
           />
-          <div className="mt-5 space-y-3">
+          <div className="mt-4 space-y-2">
             {pendingReviews.slice(0, 5).map((review) => (
               <div
                 key={review.id}
-                className="rounded-[1.2rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] px-4 py-4"
+                className="rounded-[0.85rem] px-3 py-3 transition hover:bg-[#f8faf6]"
               >
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-bold text-[var(--admin-ink)]">
-                    {review.title || "Untitled review"}
+                    Customer review
                   </p>
                   <AdminStatusPill status={review.status} />
                 </div>
-                <p className="mt-2 text-sm text-[var(--admin-muted)]">
+                <p className="mt-1 text-sm text-[var(--admin-muted)]">
                   {review.authorName} • {review.rating}/5
                 </p>
               </div>
             ))}
             {!pendingReviews.length ? (
-              <p className="rounded-[1.2rem] bg-[var(--admin-chip)] px-4 py-5 text-sm text-[var(--admin-muted)]">
-                No pending reviews right now.
+              <p className="px-3 py-4 text-sm text-[var(--admin-muted)]">
+                No pending reviews.
               </p>
             ) : null}
           </div>
         </AdminPanel>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2">
         <AdminPanel>
           <AdminSectionTitle
             title="Newest Customers"
-            description="Recently added customer accounts from the storefront."
             action={
               <Link
                 href="/customers"
                 className="text-sm font-semibold text-[var(--admin-accent)]"
               >
-                Manage customers
+                View all
               </Link>
             }
           />
-          <div className="mt-5 space-y-3">
-            {recentCustomers.map((customer) => (
-              <Link
-                key={customer.id}
-                href={`/customers/${customer.id}`}
-                className="flex items-center justify-between gap-4 rounded-[1.2rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] px-4 py-4 transition hover:bg-white"
-              >
-                <div>
-                  <p className="text-sm font-bold text-[var(--admin-ink)]">
-                    {customer.fullName}
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--admin-muted)]">
-                    {customer.email || customer.phoneNumber}
-                  </p>
-                </div>
-                <AdminStatusPill
-                  status={customer.isVerified ? "verified" : "unverified"}
-                />
-              </Link>
-            ))}
+          <div className="mt-4 space-y-2">
+            {recentCustomers.length ? (
+              recentCustomers.map((customer) => (
+                <Link
+                  key={customer.id}
+                  href={`/customers/${customer.id}`}
+                  className="flex items-center justify-between gap-4 rounded-[0.85rem] px-3 py-3 transition hover:bg-[#f8faf6]"
+                >
+                  <div>
+                    <p className="text-sm font-bold text-[var(--admin-ink)]">
+                      {customer.fullName}
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--admin-muted)]">
+                      {customer.email || customer.phoneNumber}
+                    </p>
+                  </div>
+                  <AdminStatusPill
+                    status={customer.isVerified ? "verified" : "unverified"}
+                  />
+                </Link>
+              ))
+            ) : (
+              <p className="px-3 py-4 text-sm text-[var(--admin-muted)]">
+                No recent customers.
+              </p>
+            )}
           </div>
         </AdminPanel>
 
         <AdminPanel>
-          <AdminSectionTitle
-            title="Catalog Snapshots"
-            description="Fast links to the most active management areas in your commerce stack."
-          />
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {[
-              {
-                href: "/products",
-                title: "Products",
-                body: `${state.products.length} catalog products with gallery, pricing, and metadata.`,
-              },
-              {
-                href: "/services",
-                title: "Services",
-                body: `${state.services.length} nursery service entries ready for local bookings.`,
-              },
-              {
-                href: "/team",
-                title: "Team",
-                body: `${state.staff.length} staff accounts with separate organization auth.`,
-              },
-              {
-                href: "/reviews",
-                title: "Reviews",
-                body: `${state.reviews.length} product reviews with moderation workflow.`,
-              },
-            ].map((item) => (
+          <AdminSectionTitle title="Shortcuts" />
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            {shortcuts.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-[1.3rem] border border-[var(--admin-line)] bg-[linear-gradient(180deg,#ffffff,#f7faf4)] px-4 py-4 transition hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(18,43,16,0.06)]"
+                className="rounded-[0.85rem] px-4 py-3 transition hover:bg-[#f8faf6]"
               >
-                <p className="text-base font-black tracking-[-0.03em] text-[var(--admin-ink)]">
+                <p className="text-sm font-black text-[var(--admin-ink)]">
                   {item.title}
                 </p>
-                <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)]">
-                  {item.body}
+                <p className="mt-1 text-sm text-[var(--admin-muted)]">
+                  {item.count}
                 </p>
               </Link>
             ))}

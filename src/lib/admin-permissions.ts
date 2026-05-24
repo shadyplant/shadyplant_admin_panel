@@ -30,6 +30,10 @@ export function canViewTransactions(role: string | null | undefined) {
   return hasMinimumStaffRole(role, "operations");
 }
 
+export function canViewCoupons(role: string | null | undefined) {
+  return hasMinimumStaffRole(role, "manager");
+}
+
 export function canViewCustomers(role: string | null | undefined) {
   return hasMinimumStaffRole(role, "support");
 }
@@ -39,6 +43,10 @@ export function canViewReviews(role: string | null | undefined) {
 }
 
 export function canViewTeam(role: string | null | undefined) {
+  return hasMinimumStaffRole(role, "manager");
+}
+
+export function canViewSettings(role: string | null | undefined) {
   return hasMinimumStaffRole(role, "manager");
 }
 

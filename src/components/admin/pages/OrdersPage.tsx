@@ -10,8 +10,9 @@ import {
   AdminLoadingCard,
 } from "@/components/admin/AdminDataState";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import { inputClassName, textareaClassName } from "@/components/admin/Forms";
 import {
-  AdminMetricCard,
+  AdminActionButton,
   AdminPanel,
   AdminSelect,
   AdminStatusPill,
@@ -25,7 +26,50 @@ import {
   resolveOrderTotal,
 } from "@/lib/admin-utils";
 
-type DateRangeFilter = "all" | "last_7_days" | "last_30_days" | "custom";
+type DateRangeFilter =
+  | "all"
+  | "today"
+  | "yesterday"
+  | "last_7_days"
+  | "last_30_days"
+  | "custom";
+type OrderActionStatus =
+  | "placed"
+  | "confirmed"
+  | "shipped"
+  | "out_for_delivery"
+  | "delivered"
+  | "cancelled"
+  | "refunded";
+type OrderActionModalState = {
+  order: AdminOrder;
+  nextStatus: Extract<OrderActionStatus, "cancelled" | "refunded">;
+};
+
+const orderStatusOptions = [
+  { value: "placed", label: "Order placed" },
+  { value: "confirmed", label: "Order confirmed" },
+  { value: "shipped", label: "Shipped" },
+  { value: "out_for_delivery", label: "Out for delivery" },
+  { value: "delivered", label: "Delivered" },
+  { value: "cancelled", label: "Cancelled" },
+  { value: "refunded", label: "Refunded" },
+] as const;
+
+const cancellationReasonOptions = [
+  { value: "poor_plant_health", label: "Poor Plant Health" },
+  {
+    value: "extreme_weather_conditions",
+    label: "Extreme Weather Conditions",
+  },
+  { value: "out_of_stock", label: "Out of Stock" },
+  {
+    value: "transit_safety_limit_unserviceable_location",
+    label: "Transit Safety Limit/Unserviceable Location",
+  },
+  { value: "payment_or_fraud_issue", label: "Payment or Fraud Issue" },
+  { value: "pricing_error", label: "Pricing Error" },
+] as const;
 
 function normalizeOrderStatus(status: string | null | undefined) {
   const normalizedStatus = String(status || "")
@@ -35,10 +79,13 @@ function normalizeOrderStatus(status: string | null | undefined) {
   if (
     normalizedStatus === "placed" ||
     normalizedStatus === "pending" ||
-    normalizedStatus === "confirmed" ||
     normalizedStatus === "processing"
   ) {
     return "placed";
+  }
+
+  if (normalizedStatus === "confirmed") {
+    return "confirmed";
   }
 
   if (normalizedStatus === "shipped") {
@@ -56,7 +103,24 @@ function normalizeOrderStatus(status: string | null | undefined) {
     return "delivered";
   }
 
+  if (normalizedStatus === "cancelled") {
+    return "cancelled";
+  }
+
+  if (normalizedStatus === "refunded") {
+    return "refunded";
+  }
+
   return "other";
+}
+
+function formatOrderStatusLabel(status: string | null | undefined) {
+  const normalizedStatus = String(status || "").trim().toLowerCase();
+  return (
+    orderStatusOptions.find((option) => option.value === normalizedStatus)?.label ||
+    normalizedStatus.replaceAll("_", " ") ||
+    "Unknown"
+  );
 }
 
 function getOrderTimestamp(order: AdminOrder) {
@@ -81,6 +145,35 @@ function isOrderWithinDateRange(
   }
 
   const now = new Date();
+
+  if (dateRangeFilter === "today" || dateRangeFilter === "yesterday") {
+    const targetDate = new Date(now);
+
+    if (dateRangeFilter === "yesterday") {
+      targetDate.setDate(targetDate.getDate() - 1);
+    }
+
+    const startTimestamp = new Date(
+      targetDate.getFullYear(),
+      targetDate.getMonth(),
+      targetDate.getDate(),
+      0,
+      0,
+      0,
+      0,
+    ).getTime();
+    const endTimestamp = new Date(
+      targetDate.getFullYear(),
+      targetDate.getMonth(),
+      targetDate.getDate(),
+      23,
+      59,
+      59,
+      999,
+    ).getTime();
+
+    return orderTimestamp >= startTimestamp && orderTimestamp <= endTimestamp;
+  }
 
   if (dateRangeFilter === "last_7_days") {
     const startTimestamp = now.getTime() - 7 * 24 * 60 * 60 * 1000;
@@ -111,10 +204,169 @@ export default function OrdersPage() {
     useState<DateRangeFilter>("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [pageSize, setPageSize] = useState(8);
+  const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusDrafts, setStatusDrafts] = useState<Record<string, string>>({});
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [actionModal, setActionModal] = useState<OrderActionModalState | null>(null);
+  const [cancelReasonDraft, setCancelReasonDraft] = useState("");
+  const [cancelNoteDraft, setCancelNoteDraft] = useState("");
+  const [refundReasonDraft, setRefundReasonDraft] = useState("");
+
+  function syncOrderState(updatedOrder: AdminOrder) {
+    setOrders((currentOrders) =>
+      currentOrders.map((entry) => (entry.id === updatedOrder.id ? updatedOrder : entry)),
+    );
+    setStatusDrafts((currentDrafts) => ({
+      ...currentDrafts,
+      [updatedOrder.id]:
+        String(updatedOrder.currentStatus || "placed").trim() || "placed",
+    }));
+  }
+
+  function openActionModal(
+    order: AdminOrder,
+    nextStatus: Extract<OrderActionStatus, "cancelled" | "refunded">,
+  ) {
+    setActionModal({
+      order,
+      nextStatus,
+    });
+    setCancelReasonDraft(order.cancellationReason || "");
+    setCancelNoteDraft(order.cancellationNote || "");
+    setRefundReasonDraft(order.refundReason || "");
+    setActionFeedback(null);
+  }
+
+  function closeActionModal() {
+    setActionModal(null);
+    setCancelReasonDraft("");
+    setCancelNoteDraft("");
+    setRefundReasonDraft("");
+  }
+
+  function exportOrdersAsExcel() {
+    const headers = [
+      "Order Number",
+      "Tracking Code",
+      "Customer",
+      "Phone",
+      "Email",
+      "Delivery Date",
+      "Current Status",
+      "Payment Status",
+      "Cancellation Reason",
+      "Refund Reason",
+      "Total",
+      "Created At",
+    ];
+    const rows = filteredOrders.map((order) => [
+      order.orderNumber,
+      order.trackingCode,
+      order.fullName,
+      order.phoneNumber,
+      order.email,
+      formatCompactDate(order.deliveryDate || order.createdAt),
+      order.currentStatus || "",
+      order.paymentStatus || "",
+      order.cancellationReason || "",
+      order.refundReason || "",
+      String(resolveOrderTotal(order.pricing)),
+      order.createdAt,
+    ]);
+    const tableHtml = `
+      <table>
+        <thead><tr>${headers.map((header) => `<th>${header}</th>`).join("")}</tr></thead>
+        <tbody>
+          ${rows
+            .map(
+              (row) =>
+                `<tr>${row
+                  .map((cell) => `<td>${String(cell ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")}</td>`)
+                  .join("")}</tr>`,
+            )
+            .join("")}
+        </tbody>
+      </table>
+    `;
+    const blob = new Blob([tableHtml], {
+      type: "application/vnd.ms-excel;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `orders-${new Date().toISOString().slice(0, 10)}.xls`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportOrdersAsPdf() {
+    const reportWindow = window.open("", "_blank", "width=1200,height=900");
+
+    if (!reportWindow) {
+      window.alert("Please allow popups to export the PDF report.");
+      return;
+    }
+
+    const rows = filteredOrders
+      .map(
+        (order) => `
+          <tr>
+            <td>${order.orderNumber}</td>
+            <td>${order.fullName}</td>
+            <td>${order.phoneNumber || ""}</td>
+            <td>${String(order.currentStatus || "").replaceAll("_", " ")}</td>
+            <td>${String(order.paymentStatus || "").replaceAll("_", " ")}</td>
+            <td>${formatCompactDate(order.deliveryDate || order.createdAt)}</td>
+            <td>${formatAdminCurrency(resolveOrderTotal(order.pricing))}</td>
+          </tr>
+        `,
+      )
+      .join("");
+
+    reportWindow.document.write(`
+      <html>
+        <head>
+          <title>Orders Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 24px; color: #1f2937; }
+            h1 { margin-bottom: 8px; }
+            p { color: #6b7280; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #d1d5db; padding: 8px; font-size: 12px; text-align: left; }
+            th { background: #f3f4f6; }
+          </style>
+        </head>
+        <body>
+          <h1>Orders Report</h1>
+          <p>Generated on ${new Date().toLocaleString("en-IN")}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Customer</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Payment</th>
+                <th>Delivery</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </body>
+      </html>
+    `);
+    reportWindow.document.close();
+    reportWindow.focus();
+    reportWindow.print();
+  }
 
   async function loadOrders() {
     setLoading(true);
@@ -126,6 +378,14 @@ export default function OrdersPage() {
           "/admin/orders",
         );
       setOrders(response.data.orders);
+      setStatusDrafts(
+        Object.fromEntries(
+          response.data.orders.map((order) => [
+            order.id,
+            String(order.currentStatus || "placed").trim() || "placed",
+          ]),
+        ),
+      );
     } catch (nextError) {
       setError(
         nextError instanceof Error
@@ -134,6 +394,120 @@ export default function OrdersPage() {
       );
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleQuickStatusUpdate(order: AdminOrder) {
+    const nextStatus =
+      String(statusDrafts[order.id] || order.currentStatus || "placed").trim() ||
+      "placed";
+
+    if (nextStatus === String(order.currentStatus || "").trim()) {
+      return;
+    }
+
+    if (nextStatus === "cancelled" || nextStatus === "refunded") {
+      openActionModal(order, nextStatus);
+      return;
+    }
+
+    setUpdatingId(order.id);
+    setActionFeedback(null);
+
+    try {
+      const response =
+        await authorizedRequest<ApiResponse<{ order: AdminOrder }>>(
+          `/admin/orders/${order.id}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              currentStatus: nextStatus,
+            }),
+          },
+        );
+
+      syncOrderState(response.data.order);
+      setActionFeedback({
+        type: "success",
+        text: `Order ${response.data.order.orderNumber} updated to ${formatOrderStatusLabel(response.data.order.currentStatus || nextStatus)}.`,
+      });
+    } catch (nextError) {
+      setActionFeedback({
+        type: "error",
+        text:
+          nextError instanceof Error
+            ? nextError.message
+            : "Unable to update order status.",
+      });
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  async function handleModalStatusSubmit() {
+    if (!actionModal) {
+      return;
+    }
+
+    if (actionModal.nextStatus === "cancelled" && !cancelReasonDraft.trim()) {
+      setActionFeedback({
+        type: "error",
+        text: "Select a cancellation reason before cancelling the order.",
+      });
+      return;
+    }
+
+    if (actionModal.nextStatus === "refunded" && !refundReasonDraft.trim()) {
+      setActionFeedback({
+        type: "error",
+        text: "Enter a refund reason before marking the order as refunded.",
+      });
+      return;
+    }
+
+    setUpdatingId(actionModal.order.id);
+    setActionFeedback(null);
+
+    try {
+      const response =
+        await authorizedRequest<ApiResponse<{ order: AdminOrder }>>(
+          `/admin/orders/${actionModal.order.id}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              currentStatus: actionModal.nextStatus,
+              cancellationReason:
+                actionModal.nextStatus === "cancelled"
+                  ? cancelReasonDraft.trim()
+                  : undefined,
+              cancellationNote:
+                actionModal.nextStatus === "cancelled"
+                  ? cancelNoteDraft.trim()
+                  : undefined,
+              refundReason:
+                actionModal.nextStatus === "refunded"
+                  ? refundReasonDraft.trim()
+                  : undefined,
+            }),
+          },
+        );
+
+      syncOrderState(response.data.order);
+      setActionFeedback({
+        type: "success",
+        text: `Order ${response.data.order.orderNumber} updated to ${formatOrderStatusLabel(response.data.order.currentStatus || actionModal.nextStatus)}.`,
+      });
+      closeActionModal();
+    } catch (nextError) {
+      setActionFeedback({
+        type: "error",
+        text:
+          nextError instanceof Error
+            ? nextError.message
+            : "Unable to update order status.",
+      });
+    } finally {
+      setUpdatingId(null);
     }
   }
 
@@ -152,6 +526,14 @@ export default function OrdersPage() {
 
         if (!cancelled) {
           setOrders(response.data.orders);
+          setStatusDrafts(
+            Object.fromEntries(
+              response.data.orders.map((order) => [
+                order.id,
+                String(order.currentStatus || "placed").trim() || "placed",
+              ]),
+            ),
+          );
         }
       } catch (nextError) {
         if (!cancelled) {
@@ -175,15 +557,7 @@ export default function OrdersPage() {
     };
   }, [authorizedRequest]);
 
-  const statusOptions = [
-    ...new Set(
-      orders
-        .map((order) =>
-          String(order.currentStatus || order.paymentStatus || "").trim(),
-        )
-        .filter(Boolean),
-    ),
-  ];
+  const statusOptions = orderStatusOptions;
 
   const dateFilteredOrders = [...orders]
     .sort(
@@ -203,45 +577,52 @@ export default function OrdersPage() {
 
       if (normalizedStatus === "placed") {
         summary.placed += 1;
+      } else if (normalizedStatus === "confirmed") {
+        summary.confirmed += 1;
       } else if (normalizedStatus === "shipped") {
         summary.shipped += 1;
       } else if (normalizedStatus === "out_for_delivery") {
         summary.outForDelivery += 1;
       } else if (normalizedStatus === "delivered") {
         summary.delivered += 1;
+      } else if (normalizedStatus === "cancelled") {
+        summary.cancelled += 1;
+      } else if (normalizedStatus === "refunded") {
+        summary.refunded += 1;
       }
 
       return summary;
     },
     {
       placed: 0,
+      confirmed: 0,
       shipped: 0,
       outForDelivery: 0,
       delivered: 0,
+      cancelled: 0,
+      refunded: 0,
     },
   );
 
-  const filteredOrders = dateFilteredOrders
-    .filter((order) => {
-      const matchesQuery = [
-        order.orderNumber,
-        order.trackingCode,
-        order.fullName,
-        order.phoneNumber,
-        order.email,
-        order.currentStatus,
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(query.trim().toLowerCase());
-      const orderStatus = String(
-        order.currentStatus || order.paymentStatus || "",
-      ).trim();
-      const matchesStatus =
-        statusFilter === "all" || orderStatus === statusFilter;
+  const filteredOrders = dateFilteredOrders.filter((order) => {
+    const matchesQuery = [
+      order.orderNumber,
+      order.trackingCode,
+      order.fullName,
+      order.phoneNumber,
+      order.email,
+      order.currentStatus,
+    ]
+      .join(" ")
+      .toLowerCase()
+      .includes(query.trim().toLowerCase());
+    const orderStatus = normalizeOrderStatus(
+      order.currentStatus || order.paymentStatus,
+    );
+    const matchesStatus = statusFilter === "all" || orderStatus === statusFilter;
 
-      return matchesQuery && matchesStatus;
-    });
+    return matchesQuery && matchesStatus;
+  });
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
   const page = Math.min(currentPage, totalPages);
   const paginatedOrders = filteredOrders.slice(
@@ -259,35 +640,74 @@ export default function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader eyebrow="Operations" title="Orders" description="" />
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <AdminMetricCard
-          label="Placed"
-          value={String(statusCounts.placed)}
-          meta="Orders created and waiting for next fulfillment step."
-        />
-        <AdminMetricCard
-          label="Shipped"
-          value={String(statusCounts.shipped)}
-          meta="Orders that have moved out from your dispatch workflow."
-        />
-        <AdminMetricCard
-          label="Out For Delivery"
-          value={String(statusCounts.outForDelivery)}
-          meta="Orders currently assigned for final customer delivery."
-        />
-        <AdminMetricCard
-          label="Delivered"
-          value={String(statusCounts.delivered)}
-          meta="Orders completed inside the selected date window."
-        />
-      </div>
+      <AdminPageHeader
+        title="Orders"
+        description="Track fulfillment, payment state, customer contact details, and recent order activity from one compact queue."
+      />
 
       <AdminPanel>
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="grid w-full gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {[
+                {
+                  label: "Matching orders",
+                  value: filteredOrders.length,
+                  tone: "bg-[#f8faf6]",
+                },
+                {
+                  label: "Placed",
+                  value: statusCounts.placed,
+                  tone: "bg-[#f8faf6]",
+                },
+                {
+                  label: "Confirmed",
+                  value: statusCounts.confirmed,
+                  tone: "bg-[#f4fbf1]",
+                },
+                {
+                  label: "Shipped",
+                  value: statusCounts.shipped,
+                  tone: "bg-[#f4fbf1]",
+                },
+                {
+                  label: "Out for delivery",
+                  value: statusCounts.outForDelivery,
+                  tone: "bg-[#f6fbff]",
+                },
+                {
+                  label: "Delivered",
+                  value: statusCounts.delivered,
+                  tone: "bg-[#eef8f0]",
+                },
+                {
+                  label: "Cancelled",
+                  value: statusCounts.cancelled,
+                  tone: "bg-[#fff6f4]",
+                },
+                {
+                  label: "Refunded",
+                  value: statusCounts.refunded,
+                  tone: "bg-[#fff8f0]",
+                },
+              ].map((metric) => (
+                <div
+                  key={metric.label}
+                  className={`rounded-[1rem] border border-[var(--admin-line)] px-4 py-4 ${metric.tone}`}
+                >
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    {metric.label}
+                  </p>
+                  <p className="mt-3 text-3xl font-black tracking-[-0.05em] text-[var(--admin-ink)]">
+                    {metric.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="grid gap-3 lg:flex lg:flex-1 lg:items-center">
               <AdminTextInput
                 value={query}
                 onChange={(event) => {
@@ -295,7 +715,7 @@ export default function OrdersPage() {
                   setCurrentPage(1);
                 }}
                 placeholder="Search by order number, tracking code, customer, phone, or status"
-                className="max-w-xl"
+                className="lg:max-w-xl"
               />
               <AdminSelect
                 value={statusFilter}
@@ -303,62 +723,94 @@ export default function OrdersPage() {
                   setStatusFilter(event.target.value);
                   setCurrentPage(1);
                 }}
-                className="md:w-[220px]"
+                className="lg:w-[220px]"
               >
                 <option value="all">All statuses</option>
                 {statusOptions.map((status) => (
-                  <option key={status} value={status}>
-                    {status.replaceAll("_", " ")}
+                  <option key={status.value} value={status.value}>
+                    {status.label}
                   </option>
                 ))}
               </AdminSelect>
+              <AdminSelect
+                value={dateRangeFilter}
+                onChange={(event) => {
+                  const nextValue = event.target.value as DateRangeFilter;
+                  setDateRangeFilter(nextValue);
+                  setCurrentPage(1);
+
+                  if (nextValue !== "custom") {
+                    setFromDate("");
+                    setToDate("");
+                  }
+                }}
+                className="lg:w-[220px]"
+              >
+                <option value="all">All dates</option>
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="last_7_days">Last 7 days</option>
+                <option value="last_30_days">Last 30 days</option>
+                <option value="custom">Custom date range</option>
+              </AdminSelect>
             </div>
-            <p className="text-sm font-semibold text-[var(--admin-muted)]">
-              {filteredOrders.length} matching orders
-            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <AdminActionButton
+                type="button"
+                tone="secondary"
+                onClick={exportOrdersAsExcel}
+              >
+                Export Excel
+              </AdminActionButton>
+              <AdminActionButton
+                type="button"
+                tone="secondary"
+                onClick={exportOrdersAsPdf}
+              >
+                Export PDF
+              </AdminActionButton>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <AdminTextInput
-              type="date"
-              value={fromDate}
-              onChange={(event) => {
-                setFromDate(event.target.value);
-                setCurrentPage(1);
-              }}
-              disabled={dateRangeFilter !== "custom"}
-              className="md:w-[180px]"
-            />
-            <AdminTextInput
-              type="date"
-              value={toDate}
-              onChange={(event) => {
-                setToDate(event.target.value);
-                setCurrentPage(1);
-              }}
-              disabled={dateRangeFilter !== "custom"}
-              className="md:w-[180px]"
-            />
-            <AdminSelect
-              value={dateRangeFilter}
-              onChange={(event) => {
-                const nextValue = event.target.value as DateRangeFilter;
-                setDateRangeFilter(nextValue);
-                setCurrentPage(1);
+          {dateRangeFilter === "custom" ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <p className="min-w-[88px] text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+                Date range
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <AdminTextInput
+                  type="date"
+                  value={fromDate}
+                  onChange={(event) => {
+                    setFromDate(event.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="sm:w-[180px]"
+                />
+                <AdminTextInput
+                  type="date"
+                  value={toDate}
+                  onChange={(event) => {
+                    setToDate(event.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="sm:w-[180px]"
+                />
+              </div>
+            </div>
+          ) : null}
 
-                if (nextValue !== "custom") {
-                  setFromDate("");
-                  setToDate("");
-                }
-              }}
-              className="md:w-[220px]"
+          {actionFeedback ? (
+            <div
+              className={`rounded-[1rem] px-4 py-3 text-sm font-medium ${
+                actionFeedback.type === "error"
+                  ? "border border-[#f1c7c3] bg-[#fff6f4] text-[#a73d31]"
+                  : "border border-[#cfe2c8] bg-[#f4fbf1] text-[#256233]"
+              }`}
             >
-              <option value="all">All dates</option>
-              <option value="last_7_days">Last 7 days</option>
-              <option value="last_30_days">Last 30 days</option>
-              <option value="custom">Custom date range</option>
-            </AdminSelect>
-          </div>
+              {actionFeedback.text}
+            </div>
+          ) : null}
         </div>
       </AdminPanel>
 
@@ -369,46 +821,165 @@ export default function OrdersPage() {
         />
       ) : (
         <div className="space-y-4">
-          {paginatedOrders.map((order) => (
-            <Link
-              key={order.id}
-              href={`/orders/${order.id}`}
-              className="block rounded-[1.6rem] border border-[var(--admin-line)] bg-white p-5 shadow-[0_18px_40px_rgba(18,43,16,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(18,43,16,0.07)]"
-            >
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
-                    {order.orderNumber} | {order.trackingCode || "No tracking"}
-                  </p>
-                  <h2 className="mt-2 text-xl font-black tracking-[-0.04em] text-[var(--admin-ink)]">
-                    {order.fullName}
-                  </h2>
-                  <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)]">
-                    {order.phoneNumber || "No phone"} |{" "}
-                    {order.email || "No email"} |{" "}
-                    {formatCompactDate(order.deliveryDate || order.createdAt)}
-                  </p>
-                </div>
+          <AdminPanel className="overflow-hidden p-0">
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-[var(--admin-line)] bg-[#f8faf6] text-left">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Order
+                    </th>
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Customer
+                    </th>
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Delivery
+                    </th>
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Amount
+                    </th>
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Order update
+                    </th>
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedOrders.map((order) => (
+                    <tr
+                      key={order.id}
+                      className="border-b border-[var(--admin-line)] align-top transition hover:bg-[#fbfdf8]"
+                    >
+                      <td className="px-4 py-4">
+                        <div className="min-w-[190px]">
+                          <p className="text-sm font-bold text-[var(--admin-ink)]">
+                            {order.orderNumber}
+                          </p>
+                          <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                            {order.trackingCode || "No tracking code"}
+                          </p>
+                          <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                            Created {formatCompactDate(order.createdAt)}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="min-w-[220px]">
+                          <p className="text-sm font-semibold text-[var(--admin-ink)]">
+                            {order.fullName}
+                          </p>
+                          <p className="mt-1 text-sm text-[var(--admin-muted)]">
+                            {order.phoneNumber || "No phone"}
+                          </p>
+                          <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                            {order.email || "No email"}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="min-w-[160px]">
+                          <p className="text-sm font-semibold text-[var(--admin-ink)]">
+                            {formatCompactDate(order.deliveryDate || order.createdAt)}
+                          </p>
+                          <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                            {order.paymentMethodLabel ||
+                              order.paymentMethod ||
+                              "Payment method unavailable"}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="min-w-[140px]">
+                          <p className="text-sm font-black text-[var(--admin-accent)]">
+                            {formatAdminCurrency(resolveOrderTotal(order.pricing))}
+                          </p>
+                          <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                            Delivery{" "}
+                            {formatAdminCurrency(resolveDeliveryCharge(order.pricing))}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex min-w-[220px] flex-col items-start gap-2">
+                          <AdminStatusPill
+                            status={order.currentStatus || order.paymentStatus}
+                          />
+                          {order.paymentStatus &&
+                          order.paymentStatus !== order.currentStatus ? (
+                            <span className="text-xs text-[var(--admin-muted)]">
+                              Payment:{" "}
+                              {String(order.paymentStatus).replaceAll("_", " ")}
+                            </span>
+                          ) : null}
+                          {order.currentStatus === "cancelled" &&
+                          order.cancellationReason ? (
+                            <span className="text-xs text-[#9d3b2d]">
+                              Reason:{" "}
+                              {cancellationReasonOptions.find(
+                                (reason) => reason.value === order.cancellationReason,
+                              )?.label || order.cancellationReason.replaceAll("_", " ")}
+                            </span>
+                          ) : null}
+                          {order.currentStatus === "refunded" && order.refundReason ? (
+                            <span className="text-xs text-[#9d3b2d]">
+                              Refund: {order.refundReason}
+                            </span>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex min-w-[260px] items-center gap-2">
+                          <AdminSelect
+                            value={
+                              statusDrafts[order.id] ||
+                              String(order.currentStatus || "placed").trim() ||
+                              "placed"
+                            }
+                            onChange={(event) =>
+                              setStatusDrafts((currentDrafts) => ({
+                                ...currentDrafts,
+                                [order.id]: event.target.value,
+                              }))
+                            }
+                            className="min-w-[170px]"
+                          >
+                            {orderStatusOptions.map((status) => (
+                              <option key={status.value} value={status.value}>
+                                {status.label}
+                              </option>
+                            ))}
+                          </AdminSelect>
+                          <AdminActionButton
+                            onClick={() => void handleQuickStatusUpdate(order)}
+                            disabled={updatingId === order.id}
+                            className="min-w-[78px] px-3 py-2"
+                          >
+                            {updatingId === order.id ? "Saving..." : "Update"}
+                          </AdminActionButton>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="min-w-[120px]">
+                          <Link
+                            href={`/orders/${order.id}`}
+                            className="inline-flex items-center justify-center rounded-full bg-[var(--admin-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
+                          >
+                            Open
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </AdminPanel>
 
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="text-right">
-                    <p className="text-lg font-black text-[var(--admin-accent)]">
-                      {formatAdminCurrency(resolveOrderTotal(order.pricing))}
-                    </p>
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--admin-muted)]">
-                      Delivery{" "}
-                      {formatAdminCurrency(
-                        resolveDeliveryCharge(order.pricing),
-                      )}
-                    </p>
-                  </div>
-                  <AdminStatusPill
-                    status={order.currentStatus || order.paymentStatus}
-                  />
-                </div>
-              </div>
-            </Link>
-          ))}
           <AdminPagination
             page={page}
             totalPages={totalPages}
@@ -423,6 +994,107 @@ export default function OrdersPage() {
           />
         </div>
       )}
+
+      {actionModal ? (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-[rgba(15,24,12,0.2)] px-4 py-6">
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default"
+            aria-label="Close order action dialog"
+            onClick={closeActionModal}
+          />
+          <div className="relative z-[131] w-full max-w-2xl rounded-[1.25rem] border border-[var(--admin-line)] bg-white p-6 shadow-[0_20px_60px_rgba(20,30,18,0.18)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+              {actionModal.nextStatus === "cancelled" ? "Cancel order" : "Refund order"}
+            </p>
+            <h2 className="mt-2 text-2xl font-black tracking-[-0.04em] text-[var(--admin-ink)]">
+              {actionModal.order.orderNumber}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)]">
+              {actionModal.nextStatus === "cancelled"
+                ? "Choose the cancellation reason before the order is cancelled."
+                : "Add the refund reason before the order is marked as refunded."}
+            </p>
+
+            {actionModal.nextStatus === "cancelled" ? (
+              <div className="mt-5 grid gap-4">
+                <label className="block">
+                  <span className="text-sm font-semibold text-[var(--admin-ink)]">
+                    Cancellation reason
+                  </span>
+                  <div className="mt-2">
+                    <select
+                      value={cancelReasonDraft}
+                      onChange={(event) => setCancelReasonDraft(event.target.value)}
+                      className={inputClassName()}
+                    >
+                      <option value="">Select cancellation reason</option>
+                      {cancellationReasonOptions.map((reason) => (
+                        <option key={reason.value} value={reason.value}>
+                          {reason.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </label>
+
+                <label className="block">
+                  <span className="text-sm font-semibold text-[var(--admin-ink)]">
+                    Cancellation note
+                  </span>
+                  <div className="mt-2">
+                    <textarea
+                      value={cancelNoteDraft}
+                      onChange={(event) => setCancelNoteDraft(event.target.value)}
+                      className={textareaClassName()}
+                      placeholder="Optional internal note for this cancellation."
+                    />
+                  </div>
+                </label>
+              </div>
+            ) : (
+              <div className="mt-5">
+                <label className="block">
+                  <span className="text-sm font-semibold text-[var(--admin-ink)]">
+                    Refund reason
+                  </span>
+                  <div className="mt-2">
+                    <textarea
+                      value={refundReasonDraft}
+                      onChange={(event) => setRefundReasonDraft(event.target.value)}
+                      className={textareaClassName()}
+                      placeholder="Explain why this order is being refunded."
+                    />
+                  </div>
+                </label>
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <AdminActionButton
+                type="button"
+                tone="secondary"
+                onClick={closeActionModal}
+                disabled={updatingId === actionModal.order.id}
+              >
+                Close
+              </AdminActionButton>
+              <AdminActionButton
+                type="button"
+                tone={actionModal.nextStatus === "cancelled" ? "danger" : "primary"}
+                onClick={() => void handleModalStatusSubmit()}
+                disabled={updatingId === actionModal.order.id}
+              >
+                {updatingId === actionModal.order.id
+                  ? "Saving..."
+                  : actionModal.nextStatus === "cancelled"
+                    ? "Confirm cancellation"
+                    : "Confirm refund"}
+              </AdminActionButton>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

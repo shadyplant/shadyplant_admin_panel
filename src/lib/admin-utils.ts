@@ -146,7 +146,16 @@ export function getStatusTone(status: string | null | undefined) {
     return "bg-[#fff2de] text-[#9c5d1e]";
   }
 
-  if (["rejected", "disabled", "cancelled", "failed"].includes(normalizedStatus)) {
+  if (
+    [
+      "rejected",
+      "disabled",
+      "cancelled",
+      "failed",
+      "banned_temporary",
+      "banned_permanent",
+    ].includes(normalizedStatus)
+  ) {
     return "bg-[#fff0ee] text-[#a34132]";
   }
 
