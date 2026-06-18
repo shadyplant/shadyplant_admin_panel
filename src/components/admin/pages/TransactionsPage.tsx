@@ -11,7 +11,6 @@ import {
 } from "@/components/admin/AdminDataState";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import {
-  AdminMetricCard,
   AdminPanel,
   AdminPill,
   AdminStatusPill,
@@ -192,26 +191,43 @@ export default function TransactionsPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <AdminMetricCard
-          label="Gross Monitored"
-          value={formatAdminCurrency(summary.totalGrossAmount)}
-          meta={`${summary.totalRecords} payment records tracked across orders and checkout attempts`}
-        />
-        <AdminMetricCard
-          label="Money Received"
-          value={formatAdminCurrency(summary.totalReceivedAmount)}
-          meta={`${formatAdminCurrency(summary.onlineReceivedAmount)} collected through online payments`}
-        />
-        <AdminMetricCard
-          label="Outstanding"
-          value={formatAdminCurrency(summary.totalOutstandingAmount)}
-          meta={`${formatAdminCurrency(summary.cashOnDeliveryAmount)} still expected on cash on delivery`}
-        />
-        <AdminMetricCard
-          label="At Risk"
-          value={formatAdminCurrency(summary.failedAmount)}
-          meta={`${formatAdminCurrency(summary.onlinePendingAmount)} still pending through online checkout`}
-        />
+        {[
+          {
+            label: "Gross Monitored",
+            value: formatAdminCurrency(summary.totalGrossAmount),
+            meta: `${summary.totalRecords} payment records tracked across orders and checkout attempts`,
+          },
+          {
+            label: "Money Received",
+            value: formatAdminCurrency(summary.totalReceivedAmount),
+            meta: `${formatAdminCurrency(summary.onlineReceivedAmount)} collected through online payments`,
+          },
+          {
+            label: "Outstanding",
+            value: formatAdminCurrency(summary.totalOutstandingAmount),
+            meta: `${formatAdminCurrency(summary.cashOnDeliveryAmount)} still expected on cash on delivery`,
+          },
+          {
+            label: "At Risk",
+            value: formatAdminCurrency(summary.failedAmount),
+            meta: `${formatAdminCurrency(summary.onlinePendingAmount)} still pending through online checkout`,
+          },
+        ].map((metric) => (
+          <div
+            key={metric.label}
+            className="rounded-[1rem] border border-[var(--admin-line)] bg-white p-4"
+          >
+            <p className="text-xs font-semibold uppercase text-[var(--admin-muted)]">
+              {metric.label}
+            </p>
+            <p className="mt-3 text-2xl font-semibold text-[var(--admin-ink)]">
+              {metric.value}
+            </p>
+            <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)]">
+              {metric.meta}
+            </p>
+          </div>
+        ))}
       </div>
 
       <AdminPanel>
@@ -272,25 +288,25 @@ export default function TransactionsPage() {
               <table className="min-w-full border-collapse">
                 <thead>
                   <tr className="border-b border-[var(--admin-line)] bg-[#f8faf6] text-left">
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-[var(--admin-muted)]">
                       Transaction
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-[var(--admin-muted)]">
                       Customer
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-[var(--admin-muted)]">
                       Amount
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-[var(--admin-muted)]">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-[var(--admin-muted)]">
                       Gateway
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-[var(--admin-muted)]">
                       Processed
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-[var(--admin-muted)]">
                       Action
                     </th>
                   </tr>
@@ -325,7 +341,7 @@ export default function TransactionsPage() {
                                 </AdminPill>
                               ) : null}
                             </div>
-                            <p className="mt-3 text-sm font-bold text-[var(--admin-ink)]">
+                            <p className="mt-3 text-sm font-semibold text-[var(--admin-ink)]">
                               {title}
                             </p>
                             <p className="mt-1 text-xs text-[var(--admin-muted)]">
@@ -351,7 +367,7 @@ export default function TransactionsPage() {
                         </td>
                         <td className="px-4 py-4">
                           <div className="min-w-[170px]">
-                            <p className="text-sm font-black text-[var(--admin-accent)]">
+                            <p className="text-sm font-semibold text-[var(--admin-accent)]">
                               {formatAdminCurrency(transaction.amount)}
                             </p>
                             <p className="mt-1 text-xs text-[var(--admin-muted)]">

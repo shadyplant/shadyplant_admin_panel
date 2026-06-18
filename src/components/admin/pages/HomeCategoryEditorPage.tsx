@@ -8,6 +8,7 @@ import CatalogMediaAssistant from "@/components/admin/CatalogMediaAssistant";
 import { useAdminAuth } from "@/components/admin/AdminAuthProvider";
 import { AdminErrorCard, AdminLoadingCard } from "@/components/admin/AdminDataState";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import MediaUploadInput from "@/components/admin/MediaUploadInput";
 import { AdminActionButton, AdminPanel } from "@/components/admin/AdminUi";
 import { FormField, FormGrid, inputClassName } from "@/components/admin/Forms";
 import type { AdminHomeCategoryItem, ApiResponse } from "@/lib/admin-api";
@@ -60,7 +61,7 @@ function mapItemToForm(item: AdminHomeCategoryItem): HomeCategoryFormState {
 
 function buildPayload(form: HomeCategoryFormState) {
   return {
-    itemKey: form.itemKey.trim(),
+    itemKey: form.itemKey.trim() || undefined,
     label: form.label.trim(),
     href: form.href.trim(),
     image: form.image.trim(),
@@ -250,7 +251,6 @@ export default function HomeCategoryEditorPage({
                 onChange={(event) => setForm({ ...form, itemKey: event.target.value })}
                 className={inputClassName()}
                 placeholder="indoor"
-                required
               />
             </FormField>
             <FormField label="Label">
@@ -272,11 +272,17 @@ export default function HomeCategoryEditorPage({
               />
             </FormField>
             <FormField label="Image URL">
-              <input
+              <MediaUploadInput
+                label="Image URL"
                 value={form.image}
-                onChange={(event) => setForm({ ...form, image: event.target.value })}
-                className={inputClassName()}
+                onChange={(nextImage) => setForm({ ...form, image: nextImage })}
+                entityType="home-category"
+                entityId={itemId || form.itemKey || form.label || "home-category-draft"}
+                slotKey="primary"
+                purpose="home-category-image"
+                allowEdits={allowCatalogEdits}
                 placeholder="https://..."
+                hint="Upload a category chip image to S3 or paste a hosted URL."
               />
             </FormField>
             <FormField label="Accent from">

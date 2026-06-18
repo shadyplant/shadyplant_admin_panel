@@ -18,16 +18,12 @@ export default function AdminPageHeader({
   return (
     <div className="flex flex-col gap-3 border-b border-[var(--admin-line)] pb-4 md:flex-row md:items-end md:justify-between">
       <div>
-        {eyebrow ? (
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-ink-muted)]">
-            {eyebrow}
-          </p>
-        ) : null}
-        <h1 className="mt-1.5 text-[2rem] font-black tracking-[-0.05em] text-[var(--admin-ink)]">
+      
+        <h1 className="mt-1.5 text-2xl text-[var(--admin-ink)]">
           {title}
         </h1>
         {description ? (
-          <p className="mt-1 text-sm text-[var(--admin-ink-muted)]">{description}</p>
+          <p className="mt-1 text-sm">{description}</p>
         ) : null}
       </div>
 

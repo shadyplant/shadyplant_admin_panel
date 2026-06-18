@@ -40,6 +40,7 @@ export type AdminProduct = {
   description: string;
   image: string;
   images: string[];
+  usesImages: string[];
   videoClips: AdminProductVideoClip[];
   tags: string[];
   optionGroups: AdminProductOptionGroup[];
@@ -184,6 +185,37 @@ export type AdminHomeSliderBanner = {
   sortOrder: number;
   createdAt?: string;
   updatedAt?: string;
+};
+
+export type AdminMediaUploadSession = {
+  id: string;
+  organizationId: string;
+  createdByStaffAccountId?: string | null;
+  entityType: string;
+  entityId: string;
+  slotKey: string;
+  purpose: string;
+  originalFileName: string;
+  contentType: string;
+  byteSize: number;
+  s3Key: string;
+  publicUrl: string;
+  status: "pending" | "uploaded" | "failed";
+  expiresAt: string;
+  uploadedAt?: string | null;
+  completedAt?: string | null;
+  metadata: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type AdminMediaUploadSessionResponse = {
+  session: AdminMediaUploadSession;
+  signedUrl: string;
+  publicUrl: string;
+  method: "PUT";
+  headers: Record<string, string>;
+  expiresInSeconds: number;
 };
 
 export type AdminReview = {

@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --admin-canvas: #f3f6ef;
+  --admin-canvas: #ffffff;
   --admin-surface: #eef3e9;
   --admin-chip: #f7faf4;
   --admin-line: #d7e0d1;
   --admin-line-strong: #bfd0b5;
   --admin-ink: #18311a;
   --admin-muted: #617362;
-  --admin-accent: #235f31;
-  --admin-accent-soft: #e7f2e5;
+  --admin-accent: #4c8b5d;
+  --admin-accent-soft: #e6f2ea;
   --admin-warm: #cf6c2c;
-  --background: #f3f6ef;
+  --background: #ffffff;
   --foreground: #18311a;
 }
 

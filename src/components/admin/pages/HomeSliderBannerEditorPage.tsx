@@ -8,6 +8,7 @@ import CatalogMediaAssistant from "@/components/admin/CatalogMediaAssistant";
 import { useAdminAuth } from "@/components/admin/AdminAuthProvider";
 import { AdminErrorCard, AdminLoadingCard } from "@/components/admin/AdminDataState";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import MediaUploadInput from "@/components/admin/MediaUploadInput";
 import { AdminActionButton, AdminPanel } from "@/components/admin/AdminUi";
 import { FormField, FormGrid, inputClassName } from "@/components/admin/Forms";
 import type { AdminHomeSliderBanner, ApiResponse } from "@/lib/admin-api";
@@ -51,7 +52,7 @@ function mapItemToForm(item: AdminHomeSliderBanner): HomeSliderBannerFormState {
 
 function buildPayload(form: HomeSliderBannerFormState) {
   return {
-    itemKey: form.itemKey.trim(),
+    itemKey: form.itemKey.trim() || undefined,
     title: form.title.trim(),
     href: form.href.trim(),
     desktopImage: form.desktopImage.trim(),
@@ -234,15 +235,14 @@ export default function HomeSliderBannerEditorPage({
 
         <AdminPanel>
           <FormGrid>
-            <FormField label="Banner key">
-              <input
-                value={form.itemKey}
-                onChange={(event) => setForm({ ...form, itemKey: event.target.value })}
-                className={inputClassName()}
-                placeholder="fresh-lawn-grass"
-                required
-              />
-            </FormField>
+              <FormField label="Banner key">
+                <input
+                  value={form.itemKey}
+                  onChange={(event) => setForm({ ...form, itemKey: event.target.value })}
+                  className={inputClassName()}
+                  placeholder="fresh-lawn-grass"
+                />
+              </FormField>
             <FormField label="Title">
               <input
                 value={form.title}
@@ -270,21 +270,35 @@ export default function HomeSliderBannerEditorPage({
               />
             </FormField>
             <FormField label="Desktop image URL">
-              <input
+              <MediaUploadInput
+                label="Desktop image URL"
                 value={form.desktopImage}
-                onChange={(event) => setForm({ ...form, desktopImage: event.target.value })}
-                className={inputClassName()}
+                onChange={(nextImage) =>
+                  setForm({ ...form, desktopImage: nextImage })
+                }
+                entityType="home-slider-banner"
+                entityId={itemId || form.itemKey || form.title || "home-slider-banner-draft"}
+                slotKey="desktop"
+                purpose="home-slider-desktop-image"
+                allowEdits={allowCatalogEdits}
                 placeholder="https://..."
-                required
+                hint="Upload the desktop banner to S3 or paste a hosted URL."
               />
             </FormField>
             <FormField label="Mobile image URL">
-              <input
+              <MediaUploadInput
+                label="Mobile image URL"
                 value={form.mobileImage}
-                onChange={(event) => setForm({ ...form, mobileImage: event.target.value })}
-                className={inputClassName()}
+                onChange={(nextImage) =>
+                  setForm({ ...form, mobileImage: nextImage })
+                }
+                entityType="home-slider-banner"
+                entityId={itemId || form.itemKey || form.title || "home-slider-banner-draft"}
+                slotKey="mobile"
+                purpose="home-slider-mobile-image"
+                allowEdits={allowCatalogEdits}
                 placeholder="https://..."
-                required
+                hint="Upload the mobile banner to S3 or paste a hosted URL."
               />
             </FormField>
           </FormGrid>

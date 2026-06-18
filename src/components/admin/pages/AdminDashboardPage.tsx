@@ -9,9 +9,7 @@ import {
 } from "@/components/admin/AdminDataState";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import {
-  AdminMetricCard,
   AdminPanel,
-  AdminSectionTitle,
   AdminStatusPill,
 } from "@/components/admin/AdminUi";
 import type {
@@ -221,46 +219,63 @@ export default function AdminDashboardPage() {
       />
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-        <AdminMetricCard
-          label="Products"
-          value={String(state.products.length)}
-          meta={`${featuredProducts.length} featured`}
-        />
-        <AdminMetricCard
-          label="Services"
-          value={String(state.services.length)}
-          meta={`${activeServices.length} active`}
-        />
-        <AdminMetricCard
-          label="Orders"
-          value={String(state.orders.length)}
-          meta={`${liveOrders.length} in progress`}
-        />
-        <AdminMetricCard
-          label="Customers"
-          value={String(state.customers.length)}
-          meta={`${verifiedCustomers.length} verified`}
-        />
-        <AdminMetricCard
-          label="Reviews"
-          value={String(pendingReviews.length)}
-          meta={`${state.reviews.length} total`}
-        />
+        {[
+          {
+            label: "Products",
+            value: String(state.products.length),
+            meta: `${featuredProducts.length} featured`,
+          },
+          {
+            label: "Services",
+            value: String(state.services.length),
+            meta: `${activeServices.length} active`,
+          },
+          {
+            label: "Orders",
+            value: String(state.orders.length),
+            meta: `${liveOrders.length} in progress`,
+          },
+          {
+            label: "Customers",
+            value: String(state.customers.length),
+            meta: `${verifiedCustomers.length} verified`,
+          },
+          {
+            label: "Reviews",
+            value: String(pendingReviews.length),
+            meta: `${state.reviews.length} total`,
+          },
+        ].map((metric) => (
+          <div
+            key={metric.label}
+            className="rounded-[1rem] border border-[var(--admin-line)] bg-white p-4"
+          >
+            <p className="text-xs font-medium uppercase text-[var(--admin-muted)]">
+              {metric.label}
+            </p>
+            <p className="mt-3 text-2xl font-medium text-[var(--admin-ink)]">
+              {metric.value}
+            </p>
+            <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)]">
+              {metric.meta}
+            </p>
+          </div>
+        ))}
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
         <AdminPanel>
-          <AdminSectionTitle
-            title="Recent Orders"
-            action={
-              <Link
-                href="/orders"
-                className="text-sm font-semibold text-[var(--admin-accent)]"
-              >
-                View all
-              </Link>
-            }
-          />
+          <div className="flex items-center justify-between gap-3 border-b border-[var(--admin-line)] pb-4">
+            <h2 className="text-xl font-medium text-[var(--admin-ink)]">
+              Recent Orders
+            </h2>
+            <Link
+              href="/orders"
+              className="text-sm font-medium text-[var(--admin-accent)]"
+            >
+              View all
+            </Link>
+          </div>
           <div className="mt-4 space-y-2">
             {recentOrders.length ? (
               recentOrders.map((order) => (
@@ -270,7 +285,7 @@ export default function AdminDashboardPage() {
                   className="flex flex-col gap-2 rounded-[0.85rem] px-3 py-3 transition hover:bg-[#f8faf6] md:flex-row md:items-center md:justify-between"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-[var(--admin-ink)]">
+                    <p className="text-sm font-medium text-[var(--admin-ink)]">
                       {order.orderNumber}
                     </p>
                     <p className="mt-1 truncate text-sm text-[var(--admin-muted)]">
@@ -279,7 +294,7 @@ export default function AdminDashboardPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-[var(--admin-ink)]">
+                    <span className="text-sm font-medium text-[var(--admin-ink)]">
                       {formatAdminCurrency(resolveOrderTotal(order.pricing))}
                     </span>
                     <AdminStatusPill
@@ -297,17 +312,17 @@ export default function AdminDashboardPage() {
         </AdminPanel>
 
         <AdminPanel>
-          <AdminSectionTitle
-            title="Moderation Queue"
-            action={
-              <Link
-                href="/reviews"
-                className="text-sm font-semibold text-[var(--admin-accent)]"
-              >
-                Open
-              </Link>
-            }
-          />
+          <div className="flex items-center justify-between gap-3 border-b border-[var(--admin-line)] pb-4">
+            <h2 className="text-xl font-medium text-[var(--admin-ink)]">
+              Moderation Queue
+            </h2>
+            <Link
+              href="/reviews"
+              className="text-sm font-medium text-[var(--admin-accent)]"
+            >
+              Open
+            </Link>
+          </div>
           <div className="mt-4 space-y-2">
             {pendingReviews.slice(0, 5).map((review) => (
               <div
@@ -315,7 +330,7 @@ export default function AdminDashboardPage() {
                 className="rounded-[0.85rem] px-3 py-3 transition hover:bg-[#f8faf6]"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-bold text-[var(--admin-ink)]">
+                  <p className="text-sm font-medium text-[var(--admin-ink)]">
                     Customer review
                   </p>
                   <AdminStatusPill status={review.status} />
@@ -336,17 +351,17 @@ export default function AdminDashboardPage() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <AdminPanel>
-          <AdminSectionTitle
-            title="Newest Customers"
-            action={
-              <Link
-                href="/customers"
-                className="text-sm font-semibold text-[var(--admin-accent)]"
-              >
-                View all
-              </Link>
-            }
-          />
+          <div className="flex items-center justify-between gap-3 border-b border-[var(--admin-line)] pb-4">
+            <h2 className="text-xl font-medium text-[var(--admin-ink)]">
+              Newest Customers
+            </h2>
+            <Link
+              href="/customers"
+              className="text-sm font-medium text-[var(--admin-accent)]"
+            >
+              View all
+            </Link>
+          </div>
           <div className="mt-4 space-y-2">
             {recentCustomers.length ? (
               recentCustomers.map((customer) => (
@@ -356,7 +371,7 @@ export default function AdminDashboardPage() {
                   className="flex items-center justify-between gap-4 rounded-[0.85rem] px-3 py-3 transition hover:bg-[#f8faf6]"
                 >
                   <div>
-                    <p className="text-sm font-bold text-[var(--admin-ink)]">
+                    <p className="text-sm font-medium text-[var(--admin-ink)]">
                       {customer.fullName}
                     </p>
                     <p className="mt-1 text-sm text-[var(--admin-muted)]">
@@ -377,7 +392,11 @@ export default function AdminDashboardPage() {
         </AdminPanel>
 
         <AdminPanel>
-          <AdminSectionTitle title="Shortcuts" />
+          <div className="border-b border-[var(--admin-line)] pb-4">
+            <h2 className="text-xl font-medium text-[var(--admin-ink)]">
+              Shortcuts
+            </h2>
+          </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             {shortcuts.map((item) => (
               <Link
@@ -385,7 +404,7 @@ export default function AdminDashboardPage() {
                 href={item.href}
                 className="rounded-[0.85rem] px-4 py-3 transition hover:bg-[#f8faf6]"
               >
-                <p className="text-sm font-black text-[var(--admin-ink)]">
+                <p className="text-sm font-medium text-[var(--admin-ink)]">
                   {item.title}
                 </p>
                 <p className="mt-1 text-sm text-[var(--admin-muted)]">

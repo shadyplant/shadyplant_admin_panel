@@ -7,6 +7,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
   BadgePercent,
+  Mail,
   House,
   LayoutGrid,
   LogOut,
@@ -26,6 +27,7 @@ import {
   canViewCatalog,
   canViewCoupons,
   canViewCustomers,
+  canViewMailer,
   canViewOrders,
   canViewReviews,
   canViewSettings,
@@ -87,6 +89,12 @@ const navItems = [
     label: "Customers",
     icon: Users,
     canAccess: canViewCustomers,
+  },
+  {
+    href: "/mailer",
+    label: "Mailer",
+    icon: Mail,
+    canAccess: canViewMailer,
   },
   {
     href: "/settings/payment-gateway",
@@ -382,16 +390,16 @@ export default function AdminShell({
   const visibleNavItems = navItems.filter((item) => item.canAccess(staff.role));
 
   return (
-    <div className="h-screen overflow-hidden bg-[#eef1eb] text-[var(--admin-ink)]">
+    <div className="h-screen overflow-hidden bg-[#ffffff] text-[var(--admin-ink)]">
       <div
-        className="mx-auto grid h-full max-w-[1600px] lg:transition-[grid-template-columns] lg:duration-300"
+        className="grid h-full w-full lg:transition-[grid-template-columns] lg:duration-300"
         style={{
           gridTemplateColumns: isSidebarCollapsed
             ? "96px minmax(0, 1fr)"
             : "280px minmax(0, 1fr)",
         }}
       >
-        <aside className="min-h-0 border-r border-[var(--admin-line)] bg-[var(--admin-surface)] lg:sticky lg:top-0 lg:h-screen">
+        <aside className="min-h-0 border-r border-[var(--admin-line)] bg-[#ffffff] lg:sticky lg:top-0 lg:h-screen">
           <div className="admin-scrollbar-thin flex h-full min-h-0 flex-col overflow-y-auto px-5 py-6 [scrollbar-width:thin] [scrollbar-color:rgba(97,115,98,0.42)_transparent] [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar]:h-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(97,115,98,0.38)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(97,115,98,0.55)]">
             <div className="flex shrink-0 items-center gap-2 rounded-[0.9rem] bg-[linear-gradient(145deg,#133c20,#205d2c)] px-3 py-3 text-white shadow-[0_24px_60px_rgba(19,60,32,0.28)]">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/14">
@@ -399,7 +407,7 @@ export default function AdminShell({
               </div>
               {!isSidebarCollapsed ? (
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">
+                  <p className="truncate text-[11px] font-semibold uppercase text-white/70">
                     Grass Green Nursery
                   </p>
                   <p className="truncate text-sm font-semibold text-white">
@@ -431,7 +439,7 @@ export default function AdminShell({
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center rounded-[1.2rem] px-3 py-3 text-sm font-semibold transition ${
+                    className={`flex items-center rounded-xl px-3 py-3 text-sm font-semibold transition ${
                       isSidebarCollapsed ? "justify-center" : "gap-3"
                     } ${
                       active
@@ -458,7 +466,7 @@ export default function AdminShell({
 
             <div className="mt-3 shrink-0">
               <div
-                className={`rounded-[1.4rem] border border-[var(--admin-line)] bg-white px-2 py-2 shadow-[0_6px_18px_rgba(18,43,16,0.05)] ${
+                className={`rounded-xl bg-white px-2 py-2 shadow-[0_6px_18px_rgba(18,43,16,0.05)] ${
                   isSidebarCollapsed ? "space-y-2" : "flex items-center gap-2"
                 }`}
               >
@@ -490,7 +498,7 @@ export default function AdminShell({
                 <button
                   type="button"
                   onClick={() => setIsLogoutConfirmOpen(true)}
-                  className={`inline-flex shrink-0 items-center justify-center rounded-full border border-[#efc7c1] bg-[#fff5f3] text-sm font-semibold text-[#b24336] transition hover:bg-[#ffecea] ${
+                  className={`inline-flex shrink-0 items-center justify-center rounded-xl border border-[#efc7c1] bg-[#fff5f3] text-sm font-semibold text-[#b24336] transition hover:bg-[#ffecea] ${
                     isSidebarCollapsed ? "h-10 w-full px-0" : "px-4 py-2"
                   }`}
                   aria-label="Open log out confirmation"
@@ -507,7 +515,7 @@ export default function AdminShell({
           </div>
         </aside>
 
-        <main className="admin-scrollbar-thin min-h-0 min-w-0 overflow-y-auto bg-[#eef1eb] px-4 py-4 [scrollbar-width:thin] [scrollbar-color:rgba(97,115,98,0.42)_transparent] [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar]:h-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(97,115,98,0.38)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(97,115,98,0.55)] sm:px-5 lg:h-screen lg:px-6 lg:py-5">
+        <main className="admin-scrollbar-thin min-h-0 min-w-0 overflow-y-auto bg-[#ffffff] px-4 py-4 [scrollbar-width:thin] [scrollbar-color:rgba(97,115,98,0.42)_transparent] [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar]:h-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(97,115,98,0.38)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(97,115,98,0.55)] sm:px-5 lg:h-screen lg:px-6 lg:py-5">
           <div className="min-h-full">
             {children}
           </div>

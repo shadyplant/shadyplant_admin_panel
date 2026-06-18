@@ -50,6 +50,10 @@ export function canViewSettings(role: string | null | undefined) {
   return hasMinimumStaffRole(role, "manager");
 }
 
+export function canViewMailer(role: string | null | undefined) {
+  return hasMinimumStaffRole(role, "manager");
+}
+
 export function canManageCatalog(role: string | null | undefined) {
   return hasMinimumStaffRole(role, "catalog");
 }

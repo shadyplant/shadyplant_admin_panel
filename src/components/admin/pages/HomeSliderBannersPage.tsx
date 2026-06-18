@@ -220,38 +220,20 @@ export default function HomeSliderBannersPage() {
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="grid min-w-[280px] gap-3 md:grid-cols-2">
-                          <div>
-                            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                              Desktop
-                            </p>
-                            <div className="relative aspect-[16/6] overflow-hidden rounded-[0.9rem] border border-[var(--admin-line)] bg-[var(--admin-chip)]">
-                              {item.desktopImage ? (
-                                <Image
-                                  src={item.desktopImage}
-                                  alt={`${item.title} desktop`}
-                                  fill
-                                  className="object-cover"
-                                  sizes="240px"
-                                />
-                              ) : null}
-                            </div>
-                          </div>
-                          <div>
-                            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                              Mobile
-                            </p>
-                            <div className="relative mx-auto aspect-[9/14] w-[92px] overflow-hidden rounded-[0.9rem] border border-[var(--admin-line)] bg-[var(--admin-chip)]">
-                              {item.mobileImage ? (
-                                <Image
-                                  src={item.mobileImage}
-                                  alt={`${item.title} mobile`}
-                                  fill
-                                  className="object-cover"
-                                  sizes="92px"
-                                />
-                              ) : null}
-                            </div>
+                        <div className="min-w-[220px]">
+                          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+                            Desktop
+                          </p>
+                          <div className="relative aspect-[16/6] max-w-[180px] overflow-hidden rounded-[0.9rem] border border-[var(--admin-line)] bg-[var(--admin-chip)]">
+                            {item.desktopImage ? (
+                              <Image
+                                src={item.desktopImage}
+                                alt={`${item.title} desktop`}
+                                fill
+                                className="object-cover"
+                                sizes="180px"
+                              />
+                            ) : null}
                           </div>
                         </div>
                       </td>
@@ -263,7 +245,7 @@ export default function HomeSliderBannersPage() {
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="flex min-w-[180px] flex-col gap-2">
+                        <div className="flex min-w-[220px] flex-row items-center gap-2">
                           <Link
                             href={`/home-slider-banners/${item.id}`}
                             className="inline-flex items-center justify-center rounded-full bg-[var(--admin-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"

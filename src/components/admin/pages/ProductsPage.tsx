@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { PencilLine, Trash2 } from "lucide-react";
 import AdminPagination from "@/components/admin/AdminPagination";
 import { useAdminAuth } from "@/components/admin/AdminAuthProvider";
 import { AdminEmptyCard, AdminErrorCard, AdminLoadingCard } from "@/components/admin/AdminDataState";
@@ -391,16 +392,16 @@ export default function ProductsPage() {
                                 sizes="56px"
                               />
                             ) : (
-                              <div className="flex h-full items-center justify-center text-[11px] font-semibold text-[var(--admin-muted)]">
+                              <div className="flex h-full items-center justify-center text-[11px] font-medium text-[var(--admin-muted)]">
                                 No image
                               </div>
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--admin-muted)]">
                               {product.productId}
                             </p>
-                            <h2 className="mt-0.5 text-sm font-black text-[var(--admin-ink)]">
+                            <h2 className="mt-0.5 text-sm font-medium text-[var(--admin-ink)]">
                               {product.name}
                             </h2>
                             <p className="mt-0.5 line-clamp-1 max-w-xl text-sm leading-5 text-[var(--admin-muted)]">
@@ -411,21 +412,21 @@ export default function ProductsPage() {
                       </td>
                       <td className="px-5 py-3">
                         <div className="min-w-[150px]">
-                          <p className="text-sm font-semibold text-[var(--admin-ink)]">
+                          <p className="text-sm font-medium text-[var(--admin-ink)]">
                             {product.category || "Uncategorized"}
                           </p>
                         </div>
                       </td>
                       <td className="px-5 py-3">
                         <div className="min-w-[120px]">
-                          <p className="text-sm font-black text-[var(--admin-accent)]">
+                          <p className="text-sm font-medium text-[var(--admin-accent)]">
                             {formatAdminCurrency(product.price)}
                           </p>
                         </div>
                       </td>
                       <td className="px-5 py-3">
                         <div className="min-w-[120px]">
-                          <p className="text-sm font-semibold text-[var(--admin-ink)]">
+                          <p className="text-sm font-medium text-[var(--admin-ink)]">
                             {product.stock > 0 ? product.stock : 0}
                           </p>
                         </div>
@@ -433,17 +434,18 @@ export default function ProductsPage() {
                       <td className="px-5 py-3">
                         <div className="flex min-w-[220px] items-center gap-2">
                             <AdminActionButton
+                              tone="secondary"
                               onClick={() => void openAdjustModal(product, "add")}
                               disabled={adjustingId === product.id || !allowCatalogEdits}
-                              className="min-w-[96px] px-3 py-2"
+                              className="min-w-[104px] whitespace-nowrap border-[var(--admin-accent)] bg-transparent px-3 py-2 text-[var(--admin-accent)] hover:bg-transparent hover:border-[#3f744d] hover:text-[#3f744d]"
                             >
                               Stock Add
                             </AdminActionButton>
                             <AdminActionButton
-                              tone="danger"
+                              tone="secondary"
                               onClick={() => void openAdjustModal(product, "adjust")}
                               disabled={adjustingId === product.id || !allowCatalogEdits}
-                              className="min-w-[120px] px-3 py-2"
+                              className="min-w-[128px] whitespace-nowrap border-[#b24336] bg-transparent px-3 py-2 text-[#b24336] hover:bg-transparent hover:border-[#9b362b] hover:text-[#9b362b]"
                             >
                               Adjust Stock
                             </AdminActionButton>
@@ -464,19 +466,21 @@ export default function ProductsPage() {
                         <div className="flex min-w-[180px] flex-row items-center gap-2">
                           <Link
                             href={`/products/${product.id}`}
-                            className="inline-flex min-w-[112px] items-center justify-center rounded-full bg-[var(--admin-accent)] px-3 py-2 text-sm font-semibold text-white transition hover:brightness-95"
+                            className="inline-flex min-w-[112px] items-center justify-center gap-2 rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-[var(--admin-accent)] transition hover:text-[var(--admin-ink)]"
                           >
+                            <PencilLine className="h-4 w-4 shrink-0" />
                             Edit
                           </Link>
                           {allowCatalogEdits ? (
-                            <AdminActionButton
-                              tone="danger"
+                            <button
+                              type="button"
                               onClick={() => handleDelete(product)}
                               disabled={deletingId === product.id}
-                              className="min-w-[96px] px-3 py-2"
+                              className="inline-flex min-w-[96px] items-center justify-center gap-2 rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-[#b24336] transition hover:text-[#9b362b] disabled:cursor-not-allowed disabled:opacity-60"
                             >
+                              <Trash2 className="h-4 w-4 shrink-0" />
                               {deletingId === product.id ? "Deleting..." : "Delete"}
-                            </AdminActionButton>
+                            </button>
                           ) : null}
                         </div>
                       </td>

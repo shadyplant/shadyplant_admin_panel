@@ -179,7 +179,7 @@ export default function CatalogMediaAssistant({
               Media Workspace
             </p>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--admin-muted)]">
-              Keep the {entityLabel} gallery compact here, hover a card to replace the image URL or inspect it fullscreen, and use local preview when you want to visually verify a file before publishing it.
+              Keep the {entityLabel} gallery compact here, hover a card to replace the image URL or inspect it fullscreen, and use the editor actions below when you want to upload or verify a file before publishing it.
             </p>
           </div>
 
@@ -421,7 +421,7 @@ export default function CatalogMediaAssistant({
                         Local preview mode
                       </p>
                       <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)]">
-                        The current admin API still saves URLs, not binary uploads. You can preview a local file here, then paste the hosted URL once your media manager finishes uploading it.
+                        You can preview a local file here while the upload field handles the hosted S3 URL that gets saved into the catalog record.
                       </p>
                       <AdminActionButton
                         type="button"
@@ -435,7 +435,7 @@ export default function CatalogMediaAssistant({
                     </div>
                     {draftLocalPreviewUrl ? (
                       <p className="text-sm text-[var(--admin-muted)]">
-                        Local preview loaded. Publish the file externally, then switch back to URL mode to save the final image link.
+                        Local preview loaded. Switch back to URL mode or use the upload field to save the final image link.
                       </p>
                     ) : null}
                   </>

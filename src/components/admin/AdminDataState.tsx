@@ -37,7 +37,7 @@ export function AdminEmptyCard({
   description: string;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] px-5 py-8 text-center">
+    <div className="px-5 py-8 text-center">
       <p className="text-lg font-bold text-[var(--admin-ink)]">{title}</p>
       <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)]">
         {description}
