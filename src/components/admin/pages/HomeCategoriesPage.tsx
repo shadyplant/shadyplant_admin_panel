@@ -11,6 +11,7 @@ import {
   AdminLoadingCard,
 } from "@/components/admin/AdminDataState";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import { showAdminSnackbar } from "@/components/admin/AdminSnackbar";
 import {
   AdminActionButton,
   AdminPanel,
@@ -108,8 +109,21 @@ export default function HomeCategoriesPage() {
       await authorizedRequest(`/admin/home-categories/${item.id}`, {
         method: "DELETE",
       });
+      showAdminSnackbar({
+        tone: "success",
+        title: "Home bar item deleted",
+        body: `${item.label} was removed successfully.`,
+      });
       setItems((currentItems) => currentItems.filter((entry) => entry.id !== item.id));
     } catch (nextError) {
+      showAdminSnackbar({
+        tone: "error",
+        title: "Home bar item delete failed",
+        body:
+          nextError instanceof Error
+            ? nextError.message
+            : "Unable to delete home category item.",
+      });
       window.alert(
         nextError instanceof Error
           ? nextError.message
@@ -142,7 +156,7 @@ export default function HomeCategoriesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-1">
       <AdminPageHeader
         eyebrow="Homepage Merchandising"
         title="Home Category Bar"
@@ -180,20 +194,20 @@ export default function HomeCategoriesPage() {
             <div className="overflow-x-auto">
               <table className="min-w-full border-collapse">
                 <thead>
-                  <tr className="border-b border-[var(--admin-line)] bg-[#f8faf6] text-left">
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                  <tr className="border-b border-gray-300 bg-gray-100 text-left">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                       Item
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                       Link
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                       Style
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                       Actions
                     </th>
                   </tr>
@@ -202,7 +216,7 @@ export default function HomeCategoriesPage() {
                   {paginatedItems.map((item) => (
                     <tr
                       key={item.id}
-                      className="border-b border-[var(--admin-line)] align-top transition hover:bg-[#fbfdf8]"
+                      className="border-b border-gray-300 align-top transition hover:bg-gray-100"
                     >
                       <td className="px-4 py-4">
                         <div className="flex min-w-[240px] items-start gap-3">
@@ -226,7 +240,7 @@ export default function HomeCategoriesPage() {
                                   sizes="56px"
                                 />
                               ) : (
-                                <div className="flex h-full items-center justify-center text-[10px] font-semibold text-[var(--admin-muted)]">
+                                <div className="flex h-full items-center justify-center text-[10px] font-semibold text-gray-600">
                                   No image
                                 </div>
                               )}
@@ -234,10 +248,10 @@ export default function HomeCategoriesPage() {
                           </div>
 
                           <div className="min-w-0">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-600">
                               {item.itemKey}
                             </p>
-                            <h2 className="mt-1 text-sm font-black text-[var(--admin-ink)]">
+                            <h2 className="mt-1 text-sm font-black text-gray-800">
                               {item.label}
                             </h2>
                             <div className="mt-2 flex flex-wrap gap-2">
@@ -251,7 +265,7 @@ export default function HomeCategoriesPage() {
                       </td>
                       <td className="px-4 py-4">
                         <div className="min-w-[240px]">
-                          <p className="break-all text-sm text-[var(--admin-muted)]">
+                          <p className="break-all text-sm text-gray-800">
                             {item.href}
                           </p>
                         </div>
@@ -272,7 +286,7 @@ export default function HomeCategoriesPage() {
                               style={{ backgroundColor: item.accentTo }}
                             />
                           </div>
-                          <p className="text-xs text-[var(--admin-muted)]">
+                          <p className="text-xs text-gray-600">
                             {item.image ? "Image item" : item.showOfferBadge ? "Badge item" : "No media"}
                           </p>
                         </div>
@@ -288,7 +302,7 @@ export default function HomeCategoriesPage() {
                         <div className="flex min-w-[180px] flex-col gap-2">
                           <Link
                             href={`/home-categories/${item.id}`}
-                            className="inline-flex items-center justify-center rounded-full bg-[var(--admin-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
+                            className="inline-flex items-center justify-center rounded-full bg-[#207958] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
                           >
                             Edit item
                           </Link>

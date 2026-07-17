@@ -323,11 +323,11 @@ export default function CouponsPage() {
           { label: "Used", value: summary.used },
           { label: "Expired", value: summary.expired },
         ].map((metric) => (
-          <AdminPanel key={metric.label} className="p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+          <AdminPanel key={metric.label} className="p-4 border border-gray-100">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
               {metric.label}
             </p>
-            <p className="mt-3 text-3xl font-black tracking-[-0.05em] text-[var(--admin-ink)]">
+            <p className="mt-3 text-3xl font-medium tracking-[-0.05em] text-gray-600">
               {metric.value}
             </p>
           </AdminPanel>
@@ -335,19 +335,19 @@ export default function CouponsPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
-        <AdminPanel>
+        <AdminPanel className="shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
           <div className="border-b border-[var(--admin-line)] pb-4">
-            <h2 className="text-xl font-black tracking-[-0.04em] text-[var(--admin-ink)]">
+            <h2 className="text-xl font-semibold tracking-[-0.04em] text-gray-600">
               Generate coupon
             </h2>
-            <p className="mt-1 text-sm text-[var(--admin-muted)]">
+            <p className="mt-1 text-sm text-gray-600">
               Every coupon created here is one-time-use by default.
             </p>
           </div>
 
           <form className="mt-5 space-y-4" onSubmit={handleCreateCoupon}>
             <label className="block">
-              <span className="text-sm font-semibold text-[var(--admin-ink)]">
+              <span className="text-sm font-semibold text-gray-600">
                 Coupon type
               </span>
               <div className="mt-2">
@@ -367,7 +367,7 @@ export default function CouponsPage() {
             </label>
 
             <label className="block">
-              <span className="text-sm font-semibold text-[var(--admin-ink)]">
+              <span className="text-sm font-semibold text-gray-600">
                 Coupon code
               </span>
               <div className="mt-2">
@@ -387,7 +387,7 @@ export default function CouponsPage() {
 
             {form.type === "adjust" ? (
               <label className="block">
-                <span className="text-sm font-semibold text-[var(--admin-ink)]">
+                <span className="text-sm font-semibold text-gray-600">
                   Adjust amount
                 </span>
                 <div className="mt-2">
@@ -408,7 +408,7 @@ export default function CouponsPage() {
               </label>
             ) : (
               <label className="block">
-                <span className="text-sm font-semibold text-[var(--admin-ink)]">
+                <span className="text-sm font-semibold text-gray-600">
                   Discount percent
                 </span>
                 <div className="mt-2">
@@ -432,7 +432,7 @@ export default function CouponsPage() {
             )}
 
             <label className="block">
-              <span className="text-sm font-semibold text-[var(--admin-ink)]">
+              <span className="text-sm font-semibold text-gray-600">
                 Expiry date
               </span>
               <div className="mt-2">
@@ -451,7 +451,7 @@ export default function CouponsPage() {
             </label>
 
             <label className="block">
-              <span className="text-sm font-semibold text-[var(--admin-ink)]">
+              <span className="text-sm font-semibold text-gray-600">
                 Internal note
               </span>
               <div className="mt-2">
@@ -471,13 +471,15 @@ export default function CouponsPage() {
 
         
 
-            <AdminActionButton type="submit" disabled={submitting}>
+           <div className="mt-4 flex items-center justify-center gap-3">
+             <AdminActionButton type="submit" disabled={submitting}>
               {submitting ? "Generating..." : "Generate one-time coupon"}
             </AdminActionButton>
+           </div>
           </form>
         </AdminPanel>
 
-        <div className="space-y-4">
+        <div className="space-y-4 shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
           <AdminPanel>
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-col gap-3 md:flex-row md:items-center">
@@ -505,7 +507,7 @@ export default function CouponsPage() {
                   <option value="expired">Expired</option>
                 </AdminSelect>
               </div>
-              <p className="text-sm font-semibold text-[var(--admin-muted)]">
+              <p className="text-sm font-semibold text-gray-500">
                 {coupons.length} coupon records
               </p>
             </div>
@@ -535,56 +537,56 @@ export default function CouponsPage() {
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                     <div className="space-y-3">
                       <div className="flex flex-wrap items-center gap-3">
-                        <h2 className="text-xl font-black tracking-[-0.04em] text-[var(--admin-ink)]">
+                        <h2 className="text-xl font-semibold tracking-[-0.04em] text-gray-600">
                           {coupon.code}
                         </h2>
                         <AdminStatusPill status={coupon.effectiveStatus} />
                       </div>
                       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                         <div className="rounded-[1rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] px-4 py-3">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-600">
                             Type
                           </p>
-                          <p className="mt-2 text-sm font-semibold text-[var(--admin-ink)]">
+                          <p className="mt-2 text-sm font-semibold text-gray-600">
                             {coupon.type === "adjust" ? "AdjustCoupon" : "DiscountCoupon"}
                           </p>
                         </div>
                         <div className="rounded-[1rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] px-4 py-3">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-600">
                             Benefit
                           </p>
-                          <p className="mt-2 text-sm font-semibold text-[var(--admin-ink)]">
+                          <p className="mt-2 text-sm font-semibold text-gray-600">
                             {coupon.type === "adjust"
                               ? formatAdminCurrency(coupon.adjustAmount)
                               : `${coupon.discountPercent}%`}
                           </p>
                         </div>
                         <div className="rounded-[1rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] px-4 py-3">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-600">
                             Usage
                           </p>
-                          <p className="mt-2 text-sm font-semibold text-[var(--admin-ink)]">
+                          <p className="mt-2 text-sm font-semibold text-gray-600">
                             {coupon.totalUsesRedeemed}/{coupon.totalUsesAllowed} used
                           </p>
                         </div>
                         <div className="rounded-[1rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] px-4 py-3">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-600">
                             Expires
                           </p>
-                          <p className="mt-2 text-sm font-semibold text-[var(--admin-ink)]">
+                          <p className="mt-2 text-sm font-semibold text-gray-600">
                             {coupon.expiresAt ? formatAdminDate(coupon.expiresAt) : "No expiry"}
                           </p>
                         </div>
                       </div>
                       {coupon.notes ? (
-                        <p className="text-sm text-[var(--admin-muted)]">
+                        <p className="text-sm text-gray-600">
                           Note: {coupon.notes}
                         </p>
                       ) : null}
                     </div>
 
                     <div className="flex min-w-[320px] flex-col gap-3">
-                      <p className="text-xs text-[var(--admin-muted)]">
+                      <p className="text-xs text-gray-600">
                         Created {formatAdminDate(coupon.createdAt)}
                         {coupon.createdByStaff?.email
                           ? ` by ${coupon.createdByStaff.email}`
@@ -607,7 +609,7 @@ export default function CouponsPage() {
                                 currentId === coupon.id ? null : coupon.id,
                               )
                             }
-                            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--admin-line-strong)] bg-white text-[var(--admin-ink)] transition hover:bg-[var(--admin-chip)]"
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--admin-line-strong)] bg-white text-gray-600 transition hover:bg-[var(--admin-chip)]"
                             aria-label="Open coupon actions"
                           >
                             <MoreHorizontal size={18} />

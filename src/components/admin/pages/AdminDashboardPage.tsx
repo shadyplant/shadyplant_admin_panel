@@ -248,15 +248,15 @@ export default function AdminDashboardPage() {
         ].map((metric) => (
           <div
             key={metric.label}
-            className="rounded-[1rem] border border-[var(--admin-line)] bg-white p-4"
+            className="rounded-[1rem] border border-gray-100 bg-white p-4"
           >
-            <p className="text-xs font-medium uppercase text-[var(--admin-muted)]">
+            <p className="text-xs font-medium uppercase text-gray-500">
               {metric.label}
             </p>
-            <p className="mt-3 text-2xl font-medium text-[var(--admin-ink)]">
+            <p className="mt-3 text-2xl font-medium text-gray-800">
               {metric.value}
             </p>
-            <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)]">
+            <p className="mt-2 text-sm leading-6 text-gray-500">
               {metric.meta}
             </p>
           </div>
@@ -264,14 +264,14 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
-        <AdminPanel>
-          <div className="flex items-center justify-between gap-3 border-b border-[var(--admin-line)] pb-4">
-            <h2 className="text-xl font-medium text-[var(--admin-ink)]">
+        <AdminPanel className="shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
+          <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-4">
+            <h2 className="text-xl font-medium text-gray-600">
               Recent Orders
             </h2>
             <Link
               href="/orders"
-              className="text-sm font-medium text-[var(--admin-accent)]"
+              className="text-sm font-medium text-gray-700 hover:text-gray-900"
             >
               View all
             </Link>
@@ -282,19 +282,19 @@ export default function AdminDashboardPage() {
                 <Link
                   key={order.id}
                   href={`/orders/${order.id}`}
-                  className="flex flex-col gap-2 rounded-[0.85rem] px-3 py-3 transition hover:bg-[#f8faf6] md:flex-row md:items-center md:justify-between"
+                  className="flex flex-col gap-2 rounded-[0.85rem] px-3 py-3 transition hover:bg-gray-50 md:flex-row md:items-center md:justify-between"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-[var(--admin-ink)]">
+                    <p className="text-sm font-medium text-gray-800">
                       {order.orderNumber}
                     </p>
-                    <p className="mt-1 truncate text-sm text-[var(--admin-muted)]">
+                    <p className="mt-1 truncate text-sm text-gray-500">
                       {order.fullName} • {order.phoneNumber || "No phone"} •{" "}
                       {formatCompactDate(order.createdAt)}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-[var(--admin-ink)]">
+                    <span className="text-sm font-medium text-gray-800">
                       {formatAdminCurrency(resolveOrderTotal(order.pricing))}
                     </span>
                     <AdminStatusPill
@@ -304,21 +304,21 @@ export default function AdminDashboardPage() {
                 </Link>
               ))
             ) : (
-              <p className="px-3 py-4 text-sm text-[var(--admin-muted)]">
+              <p className="px-3 py-4 text-sm text-gray-500">
                 No recent orders.
               </p>
             )}
           </div>
         </AdminPanel>
 
-        <AdminPanel>
-          <div className="flex items-center justify-between gap-3 border-b border-[var(--admin-line)] pb-4">
-            <h2 className="text-xl font-medium text-[var(--admin-ink)]">
+        <AdminPanel className="shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
+          <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-4">
+            <h2 className="text-xl font-medium text-gray-600">
               Moderation Queue
             </h2>
             <Link
               href="/reviews"
-              className="text-sm font-medium text-[var(--admin-accent)]"
+              className="text-sm font-medium text-gray-700 hover:text-gray-900"
             >
               Open
             </Link>
@@ -327,21 +327,21 @@ export default function AdminDashboardPage() {
             {pendingReviews.slice(0, 5).map((review) => (
               <div
                 key={review.id}
-                className="rounded-[0.85rem] px-3 py-3 transition hover:bg-[#f8faf6]"
+                className="rounded-[0.85rem] px-3 py-3 transition hover:bg-gray-50"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-medium text-[var(--admin-ink)]">
+                  <p className="text-sm font-medium text-gray-800">
                     Customer review
                   </p>
                   <AdminStatusPill status={review.status} />
                 </div>
-                <p className="mt-1 text-sm text-[var(--admin-muted)]">
+                <p className="mt-1 text-sm text-gray-500">
                   {review.authorName} • {review.rating}/5
                 </p>
               </div>
             ))}
             {!pendingReviews.length ? (
-              <p className="px-3 py-4 text-sm text-[var(--admin-muted)]">
+              <p className="px-3 py-4 text-sm text-gray-500">
                 No pending reviews.
               </p>
             ) : null}
@@ -350,14 +350,14 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <AdminPanel>
-          <div className="flex items-center justify-between gap-3 border-b border-[var(--admin-line)] pb-4">
-            <h2 className="text-xl font-medium text-[var(--admin-ink)]">
+        <AdminPanel className="shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
+          <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-4">
+            <h2 className="text-xl font-medium text-gray-600">
               Newest Customers
             </h2>
             <Link
               href="/customers"
-              className="text-sm font-medium text-[var(--admin-accent)]"
+              className="text-sm font-medium text-gray-700 hover:text-gray-900"
             >
               View all
             </Link>
@@ -368,13 +368,13 @@ export default function AdminDashboardPage() {
                 <Link
                   key={customer.id}
                   href={`/customers/${customer.id}`}
-                  className="flex items-center justify-between gap-4 rounded-[0.85rem] px-3 py-3 transition hover:bg-[#f8faf6]"
+                  className="flex items-center justify-between gap-4 rounded-[0.85rem] px-3 py-3 transition hover:bg-gray-50"
                 >
                   <div>
-                    <p className="text-sm font-medium text-[var(--admin-ink)]">
+                    <p className="text-sm font-medium text-gray-800">
                       {customer.fullName}
                     </p>
-                    <p className="mt-1 text-sm text-[var(--admin-muted)]">
+                    <p className="mt-1 text-sm text-gray-500">
                       {customer.email || customer.phoneNumber}
                     </p>
                   </div>
@@ -384,16 +384,16 @@ export default function AdminDashboardPage() {
                 </Link>
               ))
             ) : (
-              <p className="px-3 py-4 text-sm text-[var(--admin-muted)]">
+              <p className="px-3 py-4 text-sm text-gray-500">
                 No recent customers.
               </p>
             )}
           </div>
         </AdminPanel>
 
-        <AdminPanel>
-          <div className="border-b border-[var(--admin-line)] pb-4">
-            <h2 className="text-xl font-medium text-[var(--admin-ink)]">
+        <AdminPanel className="shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
+          <div className="border-b border-gray-100 pb-4">
+            <h2 className="text-xl font-medium text-gray-600">
               Shortcuts
             </h2>
           </div>
@@ -402,12 +402,12 @@ export default function AdminDashboardPage() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-[0.85rem] px-4 py-3 transition hover:bg-[#f8faf6]"
+                className="rounded-[0.85rem] px-4 py-3 transition hover:bg-gray-50"
               >
-                <p className="text-sm font-medium text-[var(--admin-ink)]">
+                <p className="text-sm font-medium text-gray-800">
                   {item.title}
                 </p>
-                <p className="mt-1 text-sm text-[var(--admin-muted)]">
+                <p className="mt-1 text-sm text-gray-500">
                   {item.count}
                 </p>
               </Link>

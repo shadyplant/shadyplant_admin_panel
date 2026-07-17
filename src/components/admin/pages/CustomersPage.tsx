@@ -313,7 +313,7 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-1">
       <AdminPageHeader
         eyebrow="Customer Base"
         title="Customers"
@@ -327,7 +327,7 @@ export default function CustomersPage() {
         >
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_220px_160px_auto] lg:items-end">
             <div className="flex-1">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-gray-600">
                 Customer name
               </p>
               <AdminTextInput
@@ -342,7 +342,7 @@ export default function CustomersPage() {
               />
             </div>
             <div className="flex-1">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-gray-600">
                 Email
               </p>
               <AdminTextInput
@@ -358,7 +358,7 @@ export default function CustomersPage() {
               />
             </div>
             <div className="flex-1">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-gray-600">
                 Password
               </p>
               <AdminTextInput
@@ -374,7 +374,7 @@ export default function CustomersPage() {
               />
             </div>
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-gray-600">
                 Category
               </p>
               <AdminSelect
@@ -408,9 +408,7 @@ export default function CustomersPage() {
               {creating ? "Creating..." : "Create customer"}
             </AdminActionButton>
           </div>
-          <p className="text-sm text-[var(--admin-muted)]">
-            Creates a verified local-login customer account that can sign in immediately with email and password.
-          </p>
+   
           {createError ? (
             <div className="rounded-[1rem] border border-[#f1c7c3] bg-[#fff6f4] px-4 py-3 text-sm font-medium text-[#a73d31]">
               {createError}
@@ -489,29 +487,29 @@ export default function CustomersPage() {
             <div className="overflow-x-auto">
               <table className="min-w-full border-collapse">
                 <thead>
-                  <tr className="border-b border-[var(--admin-line)] bg-[#f8faf6] text-left">
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                  <tr className="border-b border-gray-300 bg-gray-100 text-left">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                       Customer
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                       Email
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                       Phone
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                       Category
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                       Payments
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                       Joined
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                       Action
                     </th>
                   </tr>
@@ -520,44 +518,44 @@ export default function CustomersPage() {
                   {paginatedCustomers.map((customer) => (
                     <tr
                       key={customer.id}
-                      className="border-b border-[var(--admin-line)] align-top transition hover:bg-[#fbfdf8]"
+                      className="border-b border-gray-300 align-top transition hover:bg-gray-50"
                     >
                       <td className="px-4 py-4">
                         <div className="min-w-[220px]">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm font-bold text-[var(--admin-ink)]">
+                            <p className="text-sm font-semibold text-gray-700">
                               {customer.fullName}
                             </p>
                             {customer.isVip ? (
-                              <span className="inline-flex items-center rounded-full bg-[#f5edc4] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7b5b08]">
+                              <span className="inline-flex items-center rounded-full bg-gray-200 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7b5b08]">
                                 VIP
                               </span>
                             ) : null}
                           </div>
-                          <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                          <p className="mt-1 text-xs text-gray-500">
                             {customer.isVerified ? "Verified" : "Unverified"} account
                           </p>
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="min-w-[220px] text-sm text-[var(--admin-ink)]">
+                        <div className="min-w-[220px] text-sm text-gray-700">
                           {customer.email || "No email"}
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="min-w-[140px] text-sm text-[var(--admin-ink)]">
+                        <div className="min-w-[140px] text-sm text-gray-700">
                           {customer.phoneNumber || "No phone"}
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="min-w-[150px] text-sm font-semibold capitalize text-[var(--admin-muted)]">
+                        <div className="min-w-[150px] text-sm font-semibold capitalize text-gray-500">
                           {customer.customerCategory.replaceAll("_", " ")}
                         </div>
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex min-w-[220px] flex-wrap items-center gap-2">
                           <AdminStatusPill status={customer.accountStatus} />
-                          <span className="text-sm text-[var(--admin-muted)]">
+                          <span className="text-sm text-gray-500">
                             {customer.authProvider}
                           </span>
                         </div>
@@ -589,7 +587,7 @@ export default function CustomersPage() {
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="min-w-[120px] text-sm text-[var(--admin-muted)]">
+                        <div className="min-w-[120px] text-sm text-gray-700">
                           {formatCompactDate(customer.createdAt)}
                         </div>
                       </td>

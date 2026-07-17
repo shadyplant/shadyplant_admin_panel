@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ImagePlus, X } from "lucide-react";
+import { ImagePlus, Plus, Trash2, X } from "lucide-react";
 import { useAdminAuth } from "@/components/admin/AdminAuthProvider";
 import { AdminErrorCard, AdminLoadingCard } from "@/components/admin/AdminDataState";
+import { showAdminSnackbar } from "@/components/admin/AdminSnackbar";
 import {
   AdminActionButton,
   AdminPanel,
@@ -16,6 +17,7 @@ import { FormField, inputClassName, textareaClassName } from "@/components/admin
 import type {
   AdminProduct,
   AdminProductDetailSection,
+  AdminProductQuantityPricingSlab,
   AdminMediaUploadSessionResponse,
   AdminProductStockAlert,
   AdminProductOption,
@@ -31,11 +33,27 @@ type ProductEditorPageProps = {
 
 type ProductFormState = {
   id: string;
+  sku: string;
+  hsnCode: string;
   name: string;
   category: string;
   variety: string;
   containerSize: string;
   height: string;
+  growthSpeed: string;
+  countryOfOrigin: string;
+  manufacturedBy: string;
+  marketedBy: string;
+  potMaterial: string;
+  leafColor: string;
+  flowerColor: string;
+  lightRequirement: string;
+  waterRequirement: string;
+  plantPlacement: string;
+  usageArea: string;
+  plantAgeMonths: string;
+  productionCapacity: string;
+  packagingDetails: string;
   price: string;
   mrp: string;
   weight: string;
@@ -54,6 +72,7 @@ type ProductFormState = {
   tags: string;
   optionGroups: ProductOptionGroupFormState[];
   detailSections: ProductDetailSectionFormState[];
+  quantityPricingSlabs: ProductQuantityPricingSlabFormState[];
 };
 
 type ProductOptionFormState = {
@@ -82,6 +101,16 @@ type ProductOptionGroupFormState = {
 type ProductDetailSectionFormState = {
   title: string;
   description: string;
+  icon: string;
+};
+
+type ProductQuantityPricingSlabFormState = {
+  key: string;
+  label: string;
+  minQuantity: string;
+  maxQuantity: string;
+  pricePerUnit: string;
+  note: string;
 };
 
 type ConfirmationModalState =
@@ -94,13 +123,42 @@ type ConfirmationModalState =
     }
   | null;
 
+const LIGHT_REQUIREMENT_OPTIONS = [
+  "Full Sunlight",
+  "Indirect Sunlight",
+  "Low Sunlight",
+  "Full & Indirect Light",
+];
+
+const WATER_REQUIREMENT_OPTIONS = ["Low", "Medium", "High"];
+
+const PLANT_PLACEMENT_OPTIONS = ["indoor", "outdoor", "indoor & outdoor"];
+
+const PACKAGING_DETAIL_OPTIONS = ["Carton", "Sack", "Loose in Truck"];
+
 const emptyForm: ProductFormState = {
   id: "",
+  sku: "",
+  hsnCode: "",
   name: "",
   category: "",
   variety: "",
   containerSize: "",
   height: "",
+  growthSpeed: "",
+  countryOfOrigin: "",
+  manufacturedBy: "",
+  marketedBy: "",
+  potMaterial: "",
+  leafColor: "",
+  flowerColor: "",
+  lightRequirement: "",
+  waterRequirement: "",
+  plantPlacement: "",
+  usageArea: "",
+  plantAgeMonths: "",
+  productionCapacity: "",
+  packagingDetails: "",
   price: "",
   mrp: "",
   weight: "",
@@ -119,6 +177,7 @@ const emptyForm: ProductFormState = {
   tags: "",
   optionGroups: [],
   detailSections: [],
+  quantityPricingSlabs: [],
 };
 
 const emptyOption = (): ProductOptionFormState => ({
@@ -142,6 +201,15 @@ const emptyOptionGroup = (): ProductOptionGroupFormState => ({
   subtitle: "Choose the option that fits your space best",
   guideLabel: "",
   options: [emptyOption()],
+});
+
+const emptyQuantityPricingSlab = (): ProductQuantityPricingSlabFormState => ({
+  key: "",
+  label: "",
+  minQuantity: "",
+  maxQuantity: "",
+  pricePerUnit: "",
+  note: "",
 });
 
 function mapOptionToForm(option: AdminProductOption): ProductOptionFormState {
@@ -179,6 +247,20 @@ function mapDetailSectionToForm(
   return {
     title: section.title || "",
     description: section.description || "",
+    icon: section.icon || "",
+  };
+}
+
+function mapQuantityPricingSlabToForm(
+  slab: AdminProductQuantityPricingSlab,
+): ProductQuantityPricingSlabFormState {
+  return {
+    key: slab.key || "",
+    label: slab.label || "",
+    minQuantity: String(slab.minQuantity ?? ""),
+    maxQuantity: slab.maxQuantity === null || slab.maxQuantity === undefined ? "" : String(slab.maxQuantity),
+    pricePerUnit: String(slab.pricePerUnit ?? ""),
+    note: slab.note || "",
   };
 }
 
@@ -200,11 +282,33 @@ function isValidRemoteImageUrl(value: string) {
 function mapProductToForm(product: AdminProduct): ProductFormState {
   return {
     id: product.id || "",
+    sku: product.sku || "",
+    hsnCode: product.hsnCode || "",
     name: product.name || "",
     category: product.category || "",
     variety: product.variety || "",
     containerSize: product.containerSize || "",
     height: product.height || "",
+    growthSpeed: product.growthSpeed || "",
+    countryOfOrigin: product.countryOfOrigin || "",
+    manufacturedBy: product.manufacturedBy || "",
+    marketedBy: product.marketedBy || "",
+    potMaterial: product.potMaterial || "",
+    leafColor: product.leafColor || "",
+    flowerColor: product.flowerColor || "",
+    lightRequirement: product.lightRequirement || "",
+    waterRequirement: product.waterRequirement || "",
+    plantPlacement: product.plantPlacement || "",
+    usageArea: product.usageArea || "",
+    plantAgeMonths:
+      product.plantAgeMonths === null || product.plantAgeMonths === undefined
+        ? ""
+        : String(product.plantAgeMonths),
+    productionCapacity:
+      product.productionCapacity === null || product.productionCapacity === undefined
+        ? ""
+        : String(product.productionCapacity),
+    packagingDetails: product.packagingDetails || "",
     price: String(product.price ?? ""),
     mrp: String(product.mrp ?? product.price ?? ""),
     weight: String(product.weight ?? ""),
@@ -230,6 +334,9 @@ function mapProductToForm(product: AdminProduct): ProductFormState {
       : [],
     detailSections: Array.isArray(product.detailSections)
       ? product.detailSections.map(mapDetailSectionToForm)
+      : [],
+    quantityPricingSlabs: Array.isArray(product.quantityPricingSlabs)
+      ? product.quantityPricingSlabs.map(mapQuantityPricingSlabToForm)
       : [],
   };
 }
@@ -323,6 +430,7 @@ function normalizeDetailSectionsForPayload(
   return sections.flatMap((section, index) => {
     const title = section.title.trim();
     const description = section.description.trim();
+    const icon = section.icon.trim();
 
     if (!title || !description) {
       return [];
@@ -332,20 +440,77 @@ function normalizeDetailSectionsForPayload(
       {
         title,
         description,
+        icon,
         sortOrder: index,
       },
     ];
   });
 }
 
+function normalizeQuantityPricingSlabsForPayload(
+  slabs: ProductQuantityPricingSlabFormState[],
+) {
+  return slabs.flatMap((slab, index) => {
+    const key = slab.key.trim();
+    const label = slab.label.trim();
+    const minQuantity = Math.max(1, Math.floor(Number(slab.minQuantity || 1)));
+    const maxQuantityRaw = slab.maxQuantity.trim();
+    const maxQuantity =
+      !maxQuantityRaw
+        ? null
+        : Math.max(minQuantity, Math.floor(Number(maxQuantityRaw)));
+    const pricePerUnit = Number(slab.pricePerUnit);
+
+    if ((!key && !label && !minQuantity) || !Number.isFinite(pricePerUnit) || pricePerUnit < 0) {
+      return [];
+    }
+
+    return [
+      {
+        key: key || label || `slab-${index + 1}`,
+        label: label || (maxQuantity !== null ? `${minQuantity}-${maxQuantity}` : `${minQuantity}+`),
+        minQuantity,
+        maxQuantity,
+        pricePerUnit,
+        note: slab.note.trim(),
+      },
+    ];
+  });
+}
+
 function buildPayload(form: ProductFormState) {
+  const parseOptionalInteger = (value: string) => {
+    if (!value.trim()) {
+      return undefined;
+    }
+
+    const parsedValue = Math.floor(Number(value));
+    return Number.isFinite(parsedValue) && parsedValue >= 0 ? parsedValue : undefined;
+  };
+
   return {
     id: form.id.trim() || undefined,
+    sku: form.sku.trim() || undefined,
+    hsnCode: form.hsnCode.trim() || undefined,
     name: form.name.trim(),
     category: form.category.trim(),
     variety: form.variety.trim(),
     containerSize: form.containerSize.trim(),
     height: form.height.trim(),
+    growthSpeed: form.growthSpeed.trim(),
+    countryOfOrigin: form.countryOfOrigin.trim(),
+    manufacturedBy: form.manufacturedBy.trim(),
+    marketedBy: form.marketedBy.trim(),
+    potMaterial: form.potMaterial.trim(),
+    leafColor: form.leafColor.trim() || undefined,
+    flowerColor: form.flowerColor.trim() || undefined,
+    lightRequirement: form.lightRequirement.trim() || undefined,
+    waterRequirement: form.waterRequirement.trim() || undefined,
+    plantPlacement: form.plantPlacement.trim() || undefined,
+    usageArea: form.usageArea.trim() || undefined,
+    plantAgeMonths: parseOptionalInteger(form.plantAgeMonths),
+    productionCapacity: parseOptionalInteger(form.productionCapacity),
+    packagingDetails: form.packagingDetails.trim() || undefined,
     price: Number(form.price || 0),
     mrp: Math.max(Number(form.mrp || 0), Number(form.price || 0)),
     weight: Number(form.weight || 0),
@@ -364,6 +529,7 @@ function buildPayload(form: ProductFormState) {
     tags: splitCommaSeparatedValues(form.tags),
     optionGroups: normalizeOptionGroupsForPayload(form.optionGroups),
     detailSections: normalizeDetailSectionsForPayload(form.detailSections),
+    quantityPricingSlabs: normalizeQuantityPricingSlabsForPayload(form.quantityPricingSlabs),
   };
 }
 
@@ -939,8 +1105,37 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
         {
           title: "",
           description: "",
+          icon: "",
         },
       ],
+    }));
+  }
+
+  function updateQuantityPricingSlab(
+    slabIndex: number,
+    updates: Partial<ProductQuantityPricingSlabFormState>,
+  ) {
+    setForm((current) => ({
+      ...current,
+      quantityPricingSlabs: current.quantityPricingSlabs.map((slab, index) =>
+        index === slabIndex ? { ...slab, ...updates } : slab,
+      ),
+    }));
+  }
+
+  function addQuantityPricingSlab() {
+    setForm((current) => ({
+      ...current,
+      quantityPricingSlabs: [...current.quantityPricingSlabs, emptyQuantityPricingSlab()],
+    }));
+  }
+
+  function removeQuantityPricingSlab(slabIndex: number) {
+    setForm((current) => ({
+      ...current,
+      quantityPricingSlabs: current.quantityPricingSlabs.filter(
+        (_, index) => index !== slabIndex,
+      ),
     }));
   }
 
@@ -1087,6 +1282,11 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
 
       setForm(mapProductToForm(response.data.product));
       setStockAlerts(response.data.product.stockAlerts || []);
+      showAdminSnackbar({
+        tone: "success",
+        title: productId ? "Product updated" : "Product created",
+        body: `${response.data.product.name} was saved successfully.`,
+      });
       setSuccessMessage(
         productId
           ? "Product updated successfully."
@@ -1097,6 +1297,14 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
         router.replace(`/products/${response.data.product.id}`);
       }
     } catch (nextError) {
+      showAdminSnackbar({
+        tone: "error",
+        title: productId ? "Product update failed" : "Product create failed",
+        body:
+          nextError instanceof Error
+            ? nextError.message
+            : "Unable to save product.",
+      });
       setError(
         nextError instanceof Error
           ? nextError.message
@@ -1118,8 +1326,21 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
       await authorizedRequest(`/admin/products/${productId}`, {
         method: "DELETE",
       });
+      showAdminSnackbar({
+        tone: "success",
+        title: "Product deleted",
+        body: `${form.name || "This product"} was removed successfully.`,
+      });
       router.replace("/products");
     } catch (nextError) {
+      showAdminSnackbar({
+        tone: "error",
+        title: "Product delete failed",
+        body:
+          nextError instanceof Error
+            ? nextError.message
+            : "Unable to delete product.",
+      });
       setError(
         nextError instanceof Error
           ? nextError.message
@@ -1141,7 +1362,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-500">
             Catalog Editor
           </p>
           <h1 className="mt-1 text-[2rem] font-medium tracking-[-0.04em] text-[var(--admin-ink)]">
@@ -1181,16 +1402,16 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
       )}
 
       {!allowCatalogEdits ? (
-        <div className="rounded-[1rem]  bg-[var(--admin-chip)] px-4 py-3 text-sm text-[var(--admin-muted)]">
+        <div className="rounded-[1rem]  bg-gray-100 px-4 py-3 text-sm text-gray-400">
           Your role can view product metadata, but catalog changes should be completed by
           catalog, manager, admin, or owner staff.
         </div>
       ) : null}
 
       <form id="product-editor-form" className="space-y-6" onSubmit={handleSubmit}>
-        <AdminPanel className="overflow-hidden bg-white p-0">
+        <AdminPanel className="overflow-hidden bg-white p-0 shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
           <div className="border-b border-[var(--admin-line)] px-4 py-3 text-center">
-            <p className="text-base font-medium text-[var(--admin-ink)]">Product Images</p>
+            <p className="text-base font-medium text-gray-800">Product Images</p>
           </div>
 
           <div className="grid gap-0 lg:grid-cols-2">
@@ -1227,8 +1448,8 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                       key={`product-preview-${index}`}
                       className={`relative aspect-square overflow-hidden rounded-[0.85rem]${
                         isSeeMore
-                          ? "bg-[#e5f3e7]"
-                          : "bg-[var(--admin-chip)]"
+                          ? "bg-gray-100"
+                          : "bg-gray-50"
                       }`}
                     >
                       {image && !isSeeMore ? (
@@ -1240,11 +1461,11 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                           sizes="120px"
                         />
                       ) : isSeeMore ? (
-                        <div className="flex h-full items-center justify-center px-2 text-center text-xs font-medium text-[var(--admin-ink)]">
+                        <div className="flex h-full items-center justify-center px-2 text-center text-xs font-medium text-gray-400">
                           See more
                         </div>
                       ) : (
-                        <div className="flex h-full items-center justify-center px-2 text-center text-xs text-[var(--admin-muted)]">
+                        <div className="flex h-full items-center justify-center px-2 text-center text-xs text-gray-400">
                           Empty
                         </div>
                       )}
@@ -1287,8 +1508,8 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                       key={`uses-preview-${index}`}
                       className={`relative aspect-square overflow-hidden rounded-[0.85rem] ${
                         isSeeMore
-                          ? "bg-[var(--admin-chip)]"
-                          : " bg-[var(--admin-chip)]"
+                          ? "bg-gray-100"
+                          : " bg-gray-50"
                       }`}
                     >
                       {image && !isSeeMore ? (
@@ -1300,11 +1521,11 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                           sizes="120px"
                         />
                       ) : isSeeMore ? (
-                        <div className="flex h-full items-center justify-center px-2 text-center text-xs font-medium text-[var(--admin-ink)]">
+                        <div className="flex h-full items-center justify-center px-2 text-center text-xs font-medium text-gray-400">
                           See more
                         </div>
                       ) : (
-                        <div className="flex h-full items-center justify-center px-2 text-center text-xs text-[var(--admin-muted)]">
+                        <div className="flex h-full items-center justify-center px-2 text-center text-xs text-gray-400">
                           Empty
                         </div>
                       )}
@@ -1316,11 +1537,11 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
           </div>
         </AdminPanel>
 
-        <AdminPanel className=" bg-white p-5">
+        <AdminPanel className=" bg-white p-5 shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-[var(--admin-muted)]">Stock</p>
-              <p className="mt-1 text-sm text-[var(--admin-muted)]">
+              <p className="text-sm font-medium text-gray-500">Stock</p>
+              <p className="mt-1 text-sm text-gray-500">
                 Keep the available quantity accurate for the storefront.
               </p>
             </div>
@@ -1349,9 +1570,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
           </div>
         </AdminPanel>
 
-        <AdminPanel className=" bg-white p-5">
+        <AdminPanel className=" bg-white p-5 shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
           <div className="border-b border-[var(--admin-line)] pb-4">
-            <p className="text-sm font-medium text-[var(--admin-muted)]">Identify</p>
+            <p className="text-sm font-medium text-gray-500">Identify</p>
             <h2 className="mt-1 text-xl font-medium tracking-[-0.03em] text-[var(--admin-ink)]">
               Product Details
             </h2>
@@ -1367,6 +1588,22 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                 onChange={(event) => setForm({ ...form, id: event.target.value })}
                 className={inputClassName()}
                 placeholder="grass-carpet-premium"
+              />
+            </FormField>
+            <FormField label="SKU code">
+              <input
+                value={form.sku}
+                onChange={(event) => setForm({ ...form, sku: event.target.value })}
+                className={inputClassName()}
+                placeholder="SKU-00123"
+              />
+            </FormField>
+            <FormField label="HSN code">
+              <input
+                value={form.hsnCode}
+                onChange={(event) => setForm({ ...form, hsnCode: event.target.value })}
+                className={inputClassName()}
+                placeholder="06029090"
               />
             </FormField>
             <FormField label="Name">
@@ -1395,6 +1632,22 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                 required
               />
             </FormField>
+            <FormField label="Leaf color">
+              <input
+                value={form.leafColor}
+                onChange={(event) => setForm({ ...form, leafColor: event.target.value })}
+                className={inputClassName()}
+                placeholder="Green"
+              />
+            </FormField>
+            <FormField label="Flower color">
+              <input
+                value={form.flowerColor}
+                onChange={(event) => setForm({ ...form, flowerColor: event.target.value })}
+                className={inputClassName()}
+                placeholder="White"
+              />
+            </FormField>
             <FormField label="Tags (Comma-separated search and merchandising tags.)" hint="">
               <input
                 value={form.tags}
@@ -1418,9 +1671,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
         </AdminPanel>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <AdminPanel className=" bg-white p-5">
+          <AdminPanel className=" bg-white p-5 shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
             <div className="border-b border-[var(--admin-line)] pb-4">
-              <p className="text-sm font-medium text-[var(--admin-muted)]">Pricing</p>
+              <p className="text-sm font-medium text-gray-500">Pricing</p>
               <h2 className="mt-1 text-xl font-medium tracking-[-0.03em] text-[var(--admin-ink)]">
                 Price Details
               </h2>
@@ -1460,9 +1713,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
             </div>
           </AdminPanel>
 
-          <AdminPanel className=" bg-white p-5">
+          <AdminPanel className=" bg-white p-5 shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
             <div className="border-b border-[var(--admin-line)] pb-4">
-              <p className="text-sm font-medium text-[var(--admin-muted)]">Properties</p>
+              <p className="text-sm font-medium text-gray-500">Properties</p>
               <h2 className="mt-1 text-xl font-medium tracking-[-0.03em] text-[var(--admin-ink)]">
                 Measurements
               </h2>
@@ -1485,7 +1738,31 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                   onChange={(event) => setForm({ ...form, weight: event.target.value })}
                   className={inputClassName()}
                   placeholder="10"
-                  required
+                required
+              />
+            </FormField>
+              <FormField label="Plant age (months)">
+                <input
+                  type="number"
+                  min="0"
+                  value={form.plantAgeMonths}
+                  onChange={(event) =>
+                    setForm({ ...form, plantAgeMonths: event.target.value })
+                  }
+                  className={inputClassName()}
+                  placeholder="6"
+                />
+              </FormField>
+              <FormField label="Production capacity">
+                <input
+                  type="number"
+                  min="0"
+                  value={form.productionCapacity}
+                  onChange={(event) =>
+                    setForm({ ...form, productionCapacity: event.target.value })
+                  }
+                  className={inputClassName()}
+                  placeholder="20000"
                 />
               </FormField>
               <FormField label="Pack label">
@@ -1525,7 +1802,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                   }
                   className={inputClassName()}
                   required
-                />
+                  />
               </FormField>
               <FormField label="Container size">
                 <input
@@ -1539,11 +1816,157 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
               </FormField>
             </div>
           </AdminPanel>
+
+        <AdminPanel className=" bg-white p-5 shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
+          <div className="border-b border-[var(--admin-line)] pb-4">
+            <p className="text-sm font-medium text-gray-500">Plant care</p>
+            <h2 className="mt-1 text-xl font-medium tracking-[-0.03em] text-[var(--admin-ink)]">
+              Growing Details
+              </h2>
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <FormField label="Light requirement">
+                <select
+                  value={form.lightRequirement}
+                  onChange={(event) =>
+                    setForm({ ...form, lightRequirement: event.target.value })
+                  }
+                  className={inputClassName()}
+                >
+                  <option value="">Select light requirement</option>
+                  {LIGHT_REQUIREMENT_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Water requirement">
+                <select
+                  value={form.waterRequirement}
+                  onChange={(event) =>
+                    setForm({ ...form, waterRequirement: event.target.value })
+                  }
+                  className={inputClassName()}
+                >
+                  <option value="">Select water requirement</option>
+                  {WATER_REQUIREMENT_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Plant placement">
+                <input
+                  list="plant-placement-options"
+                  value={form.plantPlacement}
+                  onChange={(event) =>
+                    setForm({ ...form, plantPlacement: event.target.value })
+                  }
+                  className={inputClassName()}
+                  placeholder="indoor"
+                />
+              </FormField>
+              <FormField label="Usage area">
+                <input
+                  value={form.usageArea}
+                  onChange={(event) => setForm({ ...form, usageArea: event.target.value })}
+                  className={inputClassName()}
+                  placeholder="Garden, terrace, balcony"
+                />
+              </FormField>
+              <FormField label="Packaging details">
+                <select
+                  value={form.packagingDetails}
+                  onChange={(event) =>
+                    setForm({ ...form, packagingDetails: event.target.value })
+                  }
+                  className={inputClassName()}
+                >
+                  <option value="">Select packaging detail</option>
+                  {PACKAGING_DETAIL_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+            </div>
+            <datalist id="plant-placement-options">
+              {PLANT_PLACEMENT_OPTIONS.map((option) => (
+                <option key={option} value={option} />
+              ))}
+            </datalist>
+          </AdminPanel>
+
+          <AdminPanel className=" bg-white p-5 shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
+            <div className="border-b border-[var(--admin-line)] pb-4">
+              <p className="text-sm font-medium text-gray-500">Origin</p>
+              <h2 className="mt-1 text-xl font-medium tracking-[-0.03em] text-[var(--admin-ink)]">
+                Manufacturing Details
+              </h2>
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <FormField label="Country of origin">
+                <input
+                  value={form.countryOfOrigin}
+                  onChange={(event) =>
+                    setForm({ ...form, countryOfOrigin: event.target.value })
+                  }
+                  className={inputClassName()}
+                  placeholder="India"
+                />
+              </FormField>
+              <FormField label="Manufactured by">
+                <input
+                  value={form.manufacturedBy}
+                  onChange={(event) =>
+                    setForm({ ...form, manufacturedBy: event.target.value })
+                  }
+                  className={inputClassName()}
+                  placeholder="ShadyPlant Nursery"
+                />
+              </FormField>
+              <FormField label="Marketed by">
+                <input
+                  value={form.marketedBy}
+                  onChange={(event) =>
+                    setForm({ ...form, marketedBy: event.target.value })
+                  }
+                  className={inputClassName()}
+                  placeholder="ShadyPlant Applications"
+                />
+              </FormField>
+              <FormField label="Growth speed">
+                <input
+                  value={form.growthSpeed}
+                  onChange={(event) =>
+                    setForm({ ...form, growthSpeed: event.target.value })
+                  }
+                  className={inputClassName()}
+                  placeholder="Moderate"
+                />
+              </FormField>
+              <FormField label="Pot material">
+                <input
+                  value={form.potMaterial}
+                  onChange={(event) =>
+                    setForm({ ...form, potMaterial: event.target.value })
+                  }
+                  className={inputClassName()}
+                  placeholder="Plastic"
+                />
+              </FormField>
+            </div>
+          </AdminPanel>
         </div>
 
-        <AdminPanel className=" bg-white p-5">
+        <AdminPanel className=" bg-white p-5 shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
           <div className="border-b border-[var(--admin-line)] pb-4">
-            <p className="text-sm font-medium text-[var(--admin-muted)]">
+            <p className="text-sm font-medium text-gray-500">
               Merchandising flags
             </p>
             <h2 className="mt-1 text-xl font-medium tracking-[-0.03em] text-[var(--admin-ink)]">
@@ -1575,9 +1998,132 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
           </div>
         </AdminPanel>
 
-        <AdminPanel className=" bg-white p-5">
+        <AdminPanel className=" bg-white p-5 shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--admin-line)] pb-4">
+            <div>
+              <p className="text-sm font-medium text-gray-500">
+                Bulk pricing
+              </p>
+              <h2 className="mt-1 text-xl font-medium tracking-[-0.03em] text-[var(--admin-ink)]">
+                Quantity Slabs
+              </h2>
+            </div>
+
+            <AdminActionButton
+              type="button"
+              tone="secondary"
+              onClick={addQuantityPricingSlab}
+              disabled={!allowCatalogEdits}
+              className="gap-2"
+            >
+              <Plus size={16} />
+              Add slab
+            </AdminActionButton>
+          </div>
+
+          {form.quantityPricingSlabs.length ? (
+            <div className="mt-5 space-y-4">
+              {form.quantityPricingSlabs.map((slab, slabIndex) => (
+                <div
+                  key={`qty-slab-${slabIndex}`}
+                  className="rounded-[1rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] p-4"
+                >
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <FormField label="Label">
+                      <input
+                        value={slab.label}
+                        onChange={(event) =>
+                          updateQuantityPricingSlab(slabIndex, {
+                            label: event.target.value,
+                          })
+                        }
+                        className={inputClassName()}
+                        placeholder="1-500 units"
+                      />
+                    </FormField>
+                    <FormField label="Min quantity">
+                      <input
+                        type="number"
+                        min="1"
+                        value={slab.minQuantity}
+                        onChange={(event) =>
+                          updateQuantityPricingSlab(slabIndex, {
+                            minQuantity: event.target.value,
+                          })
+                        }
+                        className={inputClassName()}
+                        placeholder="1"
+                      />
+                    </FormField>
+                    <FormField label="Max quantity">
+                      <input
+                        type="number"
+                        min="1"
+                        value={slab.maxQuantity}
+                        onChange={(event) =>
+                          updateQuantityPricingSlab(slabIndex, {
+                            maxQuantity: event.target.value,
+                          })
+                        }
+                        className={inputClassName()}
+                        placeholder="500"
+                      />
+                    </FormField>
+                    <FormField label="Sale price / unit">
+                      <input
+                        type="number"
+                        min="0"
+                        value={slab.pricePerUnit}
+                        onChange={(event) =>
+                          updateQuantityPricingSlab(slabIndex, {
+                            pricePerUnit: event.target.value,
+                          })
+                        }
+                        className={inputClassName()}
+                        placeholder="12"
+                      />
+                    </FormField>
+                  </div>
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto]">
+                    <FormField label="Note">
+                      <input
+                        value={slab.note}
+                        onChange={(event) =>
+                          updateQuantityPricingSlab(slabIndex, {
+                            note: event.target.value,
+                          })
+                        }
+                        className={inputClassName()}
+                        placeholder="Matches the 1-500 unit slab"
+                      />
+                    </FormField>
+                    <div className="flex items-end">
+                      <AdminActionButton
+                        type="button"
+                        tone="danger"
+                        onClick={() => removeQuantityPricingSlab(slabIndex)}
+                        disabled={!allowCatalogEdits}
+                        className="gap-2"
+                      >
+                        <Trash2 size={16} />
+                        Remove
+                      </AdminActionButton>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-5 rounded-[1rem] border border-dashed border-[var(--admin-line)] px-4 py-8 text-center text-sm text-gray-500">
+              No quantity slabs yet. Add ranges like 1-500, 501-1000, or 1001+ to power bulk pricing.
+            </div>
+          )}
+        </AdminPanel>
+
+        <AdminPanel className=" bg-white p-5 shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
           <div className="border-b border-[var(--admin-line)] pb-4">
-            <p className="text-sm font-medium text-[var(--admin-muted)]">
+            <p className="text-sm font-medium text-gray-500">
               Product details / Maintenance
             </p>
             <h2 className="mt-1 text-xl font-medium tracking-[-0.03em] text-[var(--admin-ink)]">
@@ -1593,18 +2139,32 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                   className="rounded-[1rem]  bg-[var(--admin-chip)] p-4"
                 >
                   <div className="grid gap-4 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-                    <FormField label="Section title">
-                      <input
-                        value={section.title}
-                        onChange={(event) =>
-                          updateDetailSection(sectionIndex, {
-                            title: event.target.value,
-                          })
-                        }
-                        className={inputClassName()}
-                        placeholder="Maintenance Guide"
-                      />
-                    </FormField>
+                    <div className="space-y-4">
+                      <FormField label="Section title">
+                        <input
+                          value={section.title}
+                          onChange={(event) =>
+                            updateDetailSection(sectionIndex, {
+                              title: event.target.value,
+                            })
+                          }
+                          className={inputClassName()}
+                          placeholder="Maintenance Guide"
+                        />
+                      </FormField>
+                      <FormField label="Icon URL">
+                        <input
+                          value={section.icon || ""}
+                          onChange={(event) =>
+                            updateDetailSection(sectionIndex, {
+                              icon: event.target.value,
+                            })
+                          }
+                          className={inputClassName()}
+                          placeholder="https://.../icon.svg"
+                        />
+                      </FormField>
+                    </div>
                     <FormField label="Section description">
                       <textarea
                         value={section.description}
@@ -1634,7 +2194,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
               ))}
             </div>
           ) : (
-            <p className="mt-5 text-sm text-[var(--admin-muted)]">
+            <p className="mt-5 text-sm text-gray-500">
               No product detail sections added yet.
             </p>
           )}
@@ -1651,9 +2211,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
           </div>
         </AdminPanel>
 
-        <AdminPanel className=" bg-white p-5">
+        <AdminPanel className=" bg-white p-5 shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
           <div className="border-b border-[var(--admin-line)] pb-4">
-            <p className="text-sm font-medium text-[var(--admin-muted)]">
+            <p className="text-sm font-medium text-gray-500">
               Selectable option groups
             </p>
             <h2 className="mt-1 text-xl font-medium tracking-[-0.03em] text-[var(--admin-ink)]">
@@ -1662,7 +2222,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
           </div>
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-[var(--admin-muted)]">
+            <p className="text-sm text-gray-500">
               Add dynamic size or coverage choices like `12 inch`, `30 cm`, `3 gallon`, or
               `100 sq ft`.
             </p>
@@ -1897,7 +2457,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                         </div>
 
                         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                          <p className="text-xs text-[var(--admin-muted)]">
+                          <p className="text-xs text-gray-500">
                             Leave label empty if you want the storefront to generate it from
                             value + unit.
                           </p>
@@ -1936,22 +2496,22 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
               ))}
             </div>
           ) : (
-            <p className="mt-5 text-sm text-[var(--admin-muted)]">
+            <p className="mt-5 text-sm text-gray-500">
               No selectable size or coverage groups added yet.
             </p>
           )}
         </AdminPanel>
 
-        <AdminPanel className=" bg-white p-5">
+        <AdminPanel className=" bg-white p-5 shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
           <div className="border-b border-[var(--admin-line)] pb-4">
-            <p className="text-sm font-medium text-[var(--admin-muted)]">Notify requests</p>
+            <p className="text-sm font-medium text-gray-500">Notify requests</p>
             <h2 className="mt-1 text-xl font-medium tracking-[-0.03em] text-[var(--admin-ink)]">
               Waitlist
             </h2>
           </div>
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-[var(--admin-muted)]">
+            <p className="text-sm text-gray-500">
               Customers who asked to be notified when this out-of-stock product becomes
               available again.
             </p>
@@ -1972,16 +2532,16 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                       <p className="text-sm font-medium text-[var(--admin-ink)]">
                         {alert.customer?.fullName || "Interested customer"}
                       </p>
-                      <p className="mt-1 text-sm text-[var(--admin-muted)]">
+                      <p className="mt-1 text-sm text-gray-500">
                         {alert.customer?.email || "No email"}
                       </p>
                       {alert.customer?.phoneNumber ? (
-                        <p className="mt-1 text-sm text-[var(--admin-muted)]">
+                        <p className="mt-1 text-sm text-gray-500">
                           {alert.customer.phoneNumber}
                         </p>
                       ) : null}
                     </div>
-                    <div className="text-right text-xs text-[var(--admin-muted)]">
+                    <div className="text-right text-xs text-gray-500">
                       <p>
                         Requested{" "}
                         {alert.createdAt ? new Date(alert.createdAt).toLocaleString() : "recently"}
@@ -1993,7 +2553,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
               ))}
             </div>
           ) : (
-            <p className="mt-5 text-sm text-[var(--admin-muted)]">
+            <p className="mt-5 text-sm text-gray-500">
               No customers have requested a stock notification for this product yet.
             </p>
           )}
@@ -2025,7 +2585,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
               />
 
               <div className="relative z-[151] w-full max-w-md rounded-[1.35rem] border border-[var(--admin-line)] bg-white p-5 shadow-[0_24px_70px_rgba(10,24,11,0.24)]">
-                <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--admin-muted)]">
+                <p className="text-xs font-medium uppercase tracking-[0.14em] text-gray-500">
                   Confirm action
                 </p>
                 <h2 className="mt-2 text-lg font-medium text-[var(--admin-ink)]">
@@ -2033,7 +2593,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                     ? "Remove this detail section?"
                     : "Delete this product?"}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)]">
+                <p className="mt-2 text-sm leading-6 text-gray-500">
                   {confirmationModal.kind === "detail"
                     ? "This will remove the detail section from the product page."
                     : "This will permanently delete the product from the catalog and cannot be undone."}
@@ -2075,11 +2635,11 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
               <div className="relative z-[141] w-full max-w-6xl rounded-sm bg-white shadow-[0_28px_90px_rgba(10,24,11,0.28)]">
                 <div className="flex items-start justify-between gap-3 border-b border-[var(--admin-line)] px-5 py-4">
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--admin-muted)]">
+                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-gray-500">
                       {imageModalTitle} Images
                     </p>
                 
-                    <p className="mt-1 text-sm text-[var(--admin-muted)]">
+                    <p className="mt-1 text-sm text-gray-500">
                       Replace, remove, or upload a new image for the selected slot.
                     </p>
                   </div>
@@ -2138,7 +2698,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                                       sizes="40px"
                                     />
                                   ) : (
-                                    <div className="flex h-full items-center justify-center text-[var(--admin-muted)]">
+                                    <div className="flex h-full items-center justify-center text-gray-500">
                                       <ImagePlus size={16} />
                                     </div>
                                   )}
@@ -2149,7 +2709,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                                 <p className="truncate text-sm font-medium text-[var(--admin-ink)]">
                                   {slot.label}
                                 </p>
-                                <p className="mt-0.5 truncate text-[11px] leading-4 text-[var(--admin-muted)]">
+                                <p className="mt-0.5 truncate text-[11px] leading-4 text-gray-500">
                                   {slot.value || "No image added yet"}
                                 </p>
                               </div>
@@ -2188,7 +2748,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                           <p className="text-sm font-medium text-[var(--admin-ink)]">
                             Upload Image
                           </p>
-                          <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                          <p className="mt-1 text-xs text-gray-500">
                             {activeImageSlot?.label || "Select a slot to replace it."}
                           </p>
                         </div>
@@ -2225,7 +2785,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                                 className="h-full w-full object-contain p-3"
                               />
                             ) : (
-                              <div className="flex flex-col items-center gap-2 text-center text-[var(--admin-muted)]">
+                              <div className="flex flex-col items-center gap-2 text-center text-gray-500">
                                 <ImagePlus size={30} />
                                 <span className="text-sm font-medium">Upload image</span>
                               </div>
@@ -2258,7 +2818,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                                 {isImageUploading ? "Uploading..." : "Upload"}
                               </AdminActionButton>
                               {pendingImageFile ? (
-                                <span className="truncate text-xs text-[var(--admin-muted)]">
+                                <span className="truncate text-xs text-gray-500">
                                   {pendingImageFile.name}
                                 </span>
                               ) : null}
@@ -2301,12 +2861,12 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                               </p>
                             ) : null}
                             {activeImageSlotIndex === null ? (
-                              <p className="text-xs font-medium text-[var(--admin-muted)]">
+                              <p className="text-xs font-medium text-gray-500">
                                 No slot selected. Upload or add a new image.
                               </p>
                             ) : null}
                             {imageUploadStatus ? (
-                              <p className="text-xs font-medium text-[var(--admin-muted)]">
+                              <p className="text-xs font-medium text-gray-500">
                                 {imageUploadStatus}
                               </p>
                             ) : null}
@@ -2328,7 +2888,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                         </div>
                       </div>
 
-                      <p className="mt-3 text-xs leading-5 text-[var(--admin-muted)]">
+                      <p className="mt-3 text-xs leading-5 text-gray-500">
                         Choose a local file to upload it, or paste a valid URL and click Add.
                       </p>
                     </div>

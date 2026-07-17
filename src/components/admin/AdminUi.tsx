@@ -18,7 +18,7 @@ export function AdminPanel({
   return (
     <section
       {...props}
-      className={`rounded-xl bg-white p-4 ${className}`}
+      className={`rounded-xl p-4 ${className}`}
     >
       {children}
     </section>
@@ -35,21 +35,21 @@ export function AdminMetricCard({
   meta: string;
 }) {
   return (
-    <div className="rounded-xl border border-[var(--admin-line)] bg-white p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+    <div className="rounded-xl border border-gray-300 bg-white p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
         {label}
       </p>
-      <p className="mt-3 text-2xl font-black tracking-[-0.05em] text-[var(--admin-ink)]">
+      <p className="mt-3 text-2xl font-semibold text-gray-800">
         {value}
       </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)]">{meta}</p>
+      <p className="mt-2 text-sm leading-6 text-gray-500">{meta}</p>
     </div>
   );
 }
 
 export function AdminPill({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded-full bg-[var(--admin-chip)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--admin-muted)]">
+    <span className="inline-flex items-center rounded-full border border-gray-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-gray-700">
       {children}
     </span>
   );
@@ -75,13 +75,13 @@ export function AdminSectionTitle({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-3 border-b border-[var(--admin-line)] pb-4 md:flex-row md:items-center md:justify-between">
+    <div className="flex flex-col gap-3 border-b border-[#e7e7e7] pb-4 md:flex-row md:items-center md:justify-between">
       <div>
-        <h2 className="text-xl font-black tracking-[-0.04em] text-[var(--admin-ink)]">
+        <h2 className="text-xl font-semibold text-gray-900">
           {title}
         </h2>
         {description ? (
-          <p className="mt-1 text-sm leading-6 text-[var(--admin-muted)]">
+          <p className="mt-1 text-sm leading-6 text-gray-600">
             {description}
           </p>
         ) : null}
@@ -109,7 +109,7 @@ export function AdminTextInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className={`w-full rounded-xl border border-[var(--admin-line-strong)] bg-white px-4 py-3 text-sm text-[var(--admin-ink)] outline-none placeholder:text-[#8a9b88] focus:border-[var(--admin-accent)] focus:ring-4 focus:ring-[var(--admin-accent-soft)] ${props.className || ""}`}
+      className={`w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 outline-none placeholder:text-gray-500 focus:border-gray-500 focus:ring-4 focus:ring-gray-300 ${props.className || ""}`}
     />
   );
 }
@@ -118,7 +118,7 @@ export function AdminSelect(props: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
       {...props}
-      className={`w-full rounded-xl border border-[var(--admin-line-strong)] bg-white px-4 py-3 text-sm text-[var(--admin-ink)] outline-none focus:border-[var(--admin-accent)] focus:ring-4 focus:ring-[var(--admin-accent-soft)] ${props.className || ""}`}
+      className={`w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 outline-none focus:border-gray-500 focus:ring-4 focus:ring-gray-300 ${props.className || ""}`}
     />
   );
 }
@@ -127,7 +127,7 @@ export function AdminTextarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>
   return (
     <textarea
       {...props}
-      className={`min-h-[140px] w-full rounded-sm border border-[var(--admin-line-strong)] bg-white px-4 py-3 text-sm text-[var(--admin-ink)] outline-none placeholder:text-[#8a9b88] focus:border-[var(--admin-accent)] focus:ring-4 focus:ring-[var(--admin-accent-soft)] ${props.className || ""}`}
+      className={`min-h-[140px] w-full rounded-sm border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 outline-none placeholder:text-gray-500 focus:border-[var(--admin-accent)] focus:ring-4 focus:ring-[var(--admin-accent-soft)] ${props.className || ""}`}
     />
   );
 }
@@ -142,15 +142,15 @@ export function AdminActionButton({
 }) {
   const toneClassName =
     tone === "primary"
-      ? "bg-[var(--admin-accent)] text-white hover:brightness-95"
+      ? "bg-[#207958] text-white hover:brightness-95"
       : tone === "danger"
         ? " bg-[#ffffff] text-[#9d3b2d] hover:bg-[#fff0ed]"
-        : "border border-[var(--admin-line-strong)] bg-white text-[var(--admin-ink)] hover:bg-[var(--admin-chip)]";
+        : "border border-gray-300 bg-white text-gray-700 hover:bg-[#f3f4f6]";
 
   return (
     <button
       {...props}
-      className={`inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${toneClassName} ${className}`}
+      className={`inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${toneClassName} ${className}`}
     >
       {children}
     </button>
@@ -167,12 +167,12 @@ export function AdminInfoList({
       {items.map((item) => (
         <div
           key={item.label}
-          className="rounded-xl bg-[var(--admin-chip)] px-4 py-3"
+          className="rounded-xl bg-gray-100 px-4 py-3"
         >
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-600">
             {item.label}
           </dt>
-          <dd className="mt-2 text-sm leading-6 text-[var(--admin-ink)]">
+          <dd className="mt-2 text-sm leading-6 text-gray-900">
             {item.value}
           </dd>
         </div>

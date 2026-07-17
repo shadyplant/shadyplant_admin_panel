@@ -11,6 +11,7 @@ import {
   AdminLoadingCard,
 } from "@/components/admin/AdminDataState";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import { showAdminSnackbar } from "@/components/admin/AdminSnackbar";
 import {
   AdminActionButton,
   AdminPanel,
@@ -108,8 +109,21 @@ export default function HomeSliderBannersPage() {
       await authorizedRequest(`/admin/home-slider-banners/${item.id}`, {
         method: "DELETE",
       });
+      showAdminSnackbar({
+        tone: "success",
+        title: "Home slider banner deleted",
+        body: `${item.title} was removed successfully.`,
+      });
       setItems((currentItems) => currentItems.filter((entry) => entry.id !== item.id));
     } catch (nextError) {
+      showAdminSnackbar({
+        tone: "error",
+        title: "Home slider banner delete failed",
+        body:
+          nextError instanceof Error
+            ? nextError.message
+            : "Unable to delete home slider banner.",
+      });
       window.alert(
         nextError instanceof Error
           ? nextError.message
@@ -121,7 +135,7 @@ export default function HomeSliderBannersPage() {
   }
 
   const filteredItems = items.filter((item) =>
-    [item.title, item.itemKey, item.href]
+    [item.title, item.itemKey, item.href, item.actionType, item.popupKey]
       .join(" ")
       .toLowerCase()
       .includes(query.trim().toLowerCase()),
@@ -142,18 +156,18 @@ export default function HomeSliderBannersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-1">
       <AdminPageHeader
         eyebrow="Homepage Merchandising"
         title="Home Slider Banners"
-        description="Manage separate desktop and mobile hero banners shown in the storefront home slider."
+        description="Slider banners control panel"
         actionLabel={allowCatalogEdits ? "Add Banner" : undefined}
         actionHref={allowCatalogEdits ? "/home-slider-banners/new" : undefined}
       />
 
       <AdminPanel>
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <AdminTextInput
+          <AdminTextInput 
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
@@ -180,17 +194,17 @@ export default function HomeSliderBannersPage() {
             <div className="overflow-x-auto">
               <table className="min-w-full border-collapse">
                 <thead>
-                  <tr className="border-b border-[var(--admin-line)] bg-[#f8faf6] text-left">
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                  <tr className="border-b border-gray-300 bg-gray-100 text-left">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                       Banner
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                       Media
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                       Actions
                     </th>
                   </tr>
@@ -199,20 +213,25 @@ export default function HomeSliderBannersPage() {
                   {paginatedItems.map((item) => (
                     <tr
                       key={item.id}
-                      className="border-b border-[var(--admin-line)] align-top transition hover:bg-[#fbfdf8]"
+                      className="border-b border-gray-300 align-top transition hover:bg-[#fbfdf8]"
                     >
                       <td className="px-4 py-4">
                         <div className="min-w-[260px]">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-600">
                             {item.itemKey}
                           </p>
-                          <h2 className="mt-1 text-sm font-black text-[var(--admin-ink)]">
+                          <h2 className="mt-1 text-sm font-black text-gray-800">
                             {item.title}
                           </h2>
-                          <p className="mt-2 break-all text-xs text-[var(--admin-muted)]">
-                            {item.href || "No link"}
+                          <p className="mt-2 break-all text-xs text-gray-600">
+                            {item.actionType === "popup"
+                              ? `Popup: ${item.popupKey || "Not selected"}`
+                              : item.href || "No link"}
                           </p>
                           <div className="mt-2 flex flex-wrap gap-2">
+                            <AdminPill>
+                              {item.actionType === "popup" ? "Popup" : "URL"}
+                            </AdminPill>
                             {item.sortOrder > 0 ? (
                               <AdminPill>Order {item.sortOrder}</AdminPill>
                             ) : null}
@@ -221,10 +240,10 @@ export default function HomeSliderBannersPage() {
                       </td>
                       <td className="px-4 py-4">
                         <div className="min-w-[220px]">
-                          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+                          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-600">
                             Desktop
                           </p>
-                          <div className="relative aspect-[16/6] max-w-[180px] overflow-hidden rounded-[0.9rem] border border-[var(--admin-line)] bg-[var(--admin-chip)]">
+                          <div className="relative aspect-[16/6] max-w-[180px] overflow-hidden rounded-[0.9rem] border border-gray-300 bg-gray-100">
                             {item.desktopImage ? (
                               <Image
                                 src={item.desktopImage}
@@ -248,7 +267,7 @@ export default function HomeSliderBannersPage() {
                         <div className="flex min-w-[220px] flex-row items-center gap-2">
                           <Link
                             href={`/home-slider-banners/${item.id}`}
-                            className="inline-flex items-center justify-center rounded-full bg-[var(--admin-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
+                            className="inline-flex items-center justify-center rounded-full bg-[#207958] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
                           >
                             Edit banner
                           </Link>

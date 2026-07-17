@@ -38,8 +38,8 @@ export function AdminEmptyCard({
 }) {
   return (
     <div className="px-5 py-8 text-center">
-      <p className="text-lg font-bold text-[var(--admin-ink)]">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)]">
+      <p className="text-lg font-bold text-gray-800">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-gray-600">
         {description}
       </p>
     </div>

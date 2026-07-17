@@ -8,6 +8,7 @@ import CatalogMediaAssistant from "@/components/admin/CatalogMediaAssistant";
 import { useAdminAuth } from "@/components/admin/AdminAuthProvider";
 import { AdminErrorCard, AdminLoadingCard } from "@/components/admin/AdminDataState";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import { showAdminSnackbar } from "@/components/admin/AdminSnackbar";
 import MediaUploadInput from "@/components/admin/MediaUploadInput";
 import { AdminActionButton, AdminPanel } from "@/components/admin/AdminUi";
 import { FormField, FormGrid, inputClassName } from "@/components/admin/Forms";
@@ -172,6 +173,11 @@ export default function HomeCategoryEditorPage({
         );
 
       setForm(mapItemToForm(response.data.item));
+      showAdminSnackbar({
+        tone: "success",
+        title: itemId ? "Home bar item updated" : "Home bar item created",
+        body: `${response.data.item.label} was saved successfully.`,
+      });
       setSuccessMessage(
         itemId
           ? "Home bar item updated successfully."
@@ -182,6 +188,14 @@ export default function HomeCategoryEditorPage({
         router.replace(`/home-categories/${response.data.item.id}`);
       }
     } catch (nextError) {
+      showAdminSnackbar({
+        tone: "error",
+        title: itemId ? "Home bar item update failed" : "Home bar item create failed",
+        body:
+          nextError instanceof Error
+            ? nextError.message
+            : "Unable to save home bar item.",
+      });
       setError(
         nextError instanceof Error
           ? nextError.message
@@ -209,8 +223,21 @@ export default function HomeCategoryEditorPage({
       await authorizedRequest(`/admin/home-categories/${itemId}`, {
         method: "DELETE",
       });
+      showAdminSnackbar({
+        tone: "success",
+        title: "Home bar item deleted",
+        body: `${form.label || "This item"} was removed successfully.`,
+      });
       router.replace("/home-categories");
     } catch (nextError) {
+      showAdminSnackbar({
+        tone: "error",
+        title: "Home bar item delete failed",
+        body:
+          nextError instanceof Error
+            ? nextError.message
+            : "Unable to delete home bar item.",
+      });
       setError(
         nextError instanceof Error
           ? nextError.message

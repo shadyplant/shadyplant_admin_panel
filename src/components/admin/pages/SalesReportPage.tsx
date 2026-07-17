@@ -683,7 +683,7 @@ export default function SalesReportPage() {
         description="Filter sales by date range, review the live rows, and export only the currently selected report window."
       />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 px-4">
         <AdminMetricCard
           label="Filtered Sales"
           value={formatCurrency(filteredSummary.totalSale)}
@@ -706,7 +706,7 @@ export default function SalesReportPage() {
         />
       </div>
 
-      <AdminPanel className="p-6">
+      <AdminPanel className="px-4 py-0">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:gap-4">
           <div className="xl:min-w-0 xl:flex-[1.6]">
             <AdminTextInput
@@ -730,7 +730,7 @@ export default function SalesReportPage() {
               <option value="last_30_days">30 days</option>
             </AdminSelect>
           </div>
-          <div className="flex items-center gap-2 rounded-[1rem] border border-[var(--admin-line-strong)] bg-white px-3 py-2.5 xl:flex-[1.05]">
+          <div className="flex items-center gap-2 rounded-[0.6rem] border border-gray-300 bg-white px-3 py-0 xl:flex-[1.05]">
             <AdminTextInput
               type="date"
               value={fromDate}
@@ -740,7 +740,7 @@ export default function SalesReportPage() {
               }}
               className="min-w-0 border-0 px-2 py-1 focus:ring-0"
             />
-            <span className="text-sm font-semibold text-[var(--admin-muted)]">to</span>
+            <span className="text-sm font-semibold text-gray-500">to</span>
             <AdminTextInput
               type="date"
               value={toDate}
@@ -752,16 +752,16 @@ export default function SalesReportPage() {
             />
           </div>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 mt-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-4 text-sm text-[var(--admin-muted)]">
+            <div className="flex flex-wrap gap-4 text-sm text-gray-700">
               <p>
                 Current filter:{" "}
-                <span className="font-semibold text-[var(--admin-ink)]">{filteredLabel}</span>
+                <span className="font-semibold text-gray-800">{filteredLabel}</span>
               </p>
               <p>
                 Search results:{" "}
-                <span className="font-semibold text-[var(--admin-ink)]">
+                <span className="font-semibold text-gray-800">
                   {filteredTransactions.length}
                 </span>
               </p>
@@ -796,7 +796,7 @@ export default function SalesReportPage() {
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse">
             <thead>
-              <tr className="border-b border-[var(--admin-line)] bg-[#f8faf6] text-left">
+              <tr className="border-b border-gray-300 bg-gray-100 text-left">
                 {[
                   "Date",
                   "Invoice",
@@ -811,7 +811,7 @@ export default function SalesReportPage() {
                 ].map((label) => (
                   <th
                     key={label}
-                    className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]"
+                    className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-700"
                   >
                     {label}
                   </th>
@@ -841,35 +841,35 @@ export default function SalesReportPage() {
                 filteredTransactions.map((transaction, transactionIndex) => (
                   <tr
                     key={`${transaction.invoiceNo}-${transactionIndex}`}
-                    className="border-b border-[var(--admin-line)] align-top transition hover:bg-[#fbfdf8]"
+                    className="border-b border-gray-300 align-top transition hover:bg-gray-50"
                   >
-                    <td className="px-4 py-4 text-sm text-[var(--admin-ink)]">
+                    <td className="px-4 py-4 text-sm text-gray-800">
                       {transaction.date}
                     </td>
-                    <td className="px-4 py-4 text-sm font-semibold text-[var(--admin-ink)]">
+                    <td className="px-4 py-4 text-sm font-semibold text-gray-800">
                       {transaction.invoiceNo}
                     </td>
-                    <td className="px-4 py-4 text-sm text-[var(--admin-ink)]">
+                    <td className="px-4 py-4 text-sm text-gray-800">
                       <div>{transaction.partyName}</div>
                       {transaction.partyPhone ? (
-                        <div className="mt-1 text-xs text-[var(--admin-muted)]">
+                        <div className="mt-1 text-xs text-gray-500">
                           {transaction.partyPhone}
                         </div>
                       ) : null}
                     </td>
-                    <td className="px-4 py-4 text-sm text-[var(--admin-ink)]">
+                    <td className="px-4 py-4 text-sm text-gray-800">
                       {transaction.transactionType}
                     </td>
-                    <td className="px-4 py-4 text-sm text-[var(--admin-ink)]">
+                    <td className="px-4 py-4 text-sm text-gray-800">
                       {transaction.paymentType || "Payment"}
                     </td>
-                    <td className="px-4 py-4 text-sm font-semibold text-[var(--admin-ink)]">
+                    <td className="px-4 py-4 text-sm font-semibold text-gray-800">
                       {formatCurrency(transaction.total)}
                     </td>
-                    <td className="px-4 py-4 text-sm text-[var(--admin-ink)]">
+                    <td className="px-4 py-4 text-sm text-gray-800">
                       {formatCurrency(transaction.balanceDue)}
                     </td>
-                    <td className="px-4 py-4 text-sm text-[var(--admin-ink)]">
+                    <td className="px-4 py-4 text-sm text-gray-800">
                       {transaction.dueDate || "-"}
                     </td>
                     <td

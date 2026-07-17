@@ -86,7 +86,7 @@ export default function PaymentGatewaySettingsPage() {
       <AdminPageHeader
         eyebrow="Configuration"
         title="Payment Gateway"
-        description="Switch the live gateway used for online checkout without changing the codebase. Customer checkout and admin-assisted payment flows will use the active provider."
+        description="Switch the live gateway "
       />
 
       {loading ? <AdminLoadingCard label="Loading gateway settings..." /> : null}
@@ -94,10 +94,7 @@ export default function PaymentGatewaySettingsPage() {
 
       {!loading && !error && settings ? (
         <AdminPanel className="space-y-5">
-          <AdminSectionTitle
-            title="Active gateway"
-            description="Only one online gateway is active at a time. Existing payment attempts keep their original provider for verification."
-          />
+     
 
           {message ? (
             <div className="rounded-[1rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] px-4 py-3 text-sm text-[var(--admin-ink)]">
@@ -115,43 +112,58 @@ export default function PaymentGatewaySettingsPage() {
                   key={provider.provider}
                   className={`rounded-[1rem] border p-5 ${
                     isActive
-                      ? "border-[var(--admin-accent)] bg-[var(--admin-accent-soft)]"
-                      : "border-[var(--admin-line)] bg-white"
+                      ? "border-[#207958] bg-gray-50"
+                      : "border-gray-300 bg-white"
                   }`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
                         Provider
                       </p>
-                      <h2 className="mt-2 text-2xl font-black tracking-[-0.04em] text-[var(--admin-ink)]">
+                     <div className="mt-2 flex items-center gap-3">
+                       {provider.provider === "cashfree" ? (
+                        <img
+                          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTzmTNeg4lYC1Vk0o2XxyyqXJxHFOciQ2DFfxktlGZ3ec8S1JCPVLgdh2s&s=10"
+                          alt={provider.label}
+                          className="h-8 w-8"
+                        />
+                      ) : (
+                        <img
+                          src="https://i0.wp.com/www.plansinfo.com/blog/wp-content/uploads/2018/01/phonepe-e1520537823958.png?fit=200%2C200&ssl=1"
+                          alt={provider.label}
+                          className="h-8 w-8"
+                        />
+                      )}
+                      <h2 className="mt-2 text-2xl font-semibold text-gray-800">
                         {provider.label}
                       </h2>
+                     </div>
                     </div>
                     <AdminStatusPill status={isActive ? "active" : "inactive"} />
                   </div>
 
                   <div className="mt-5 grid gap-3 md:grid-cols-2">
                     <div className="rounded-[0.9rem] bg-white/70 px-4 py-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">
                         Checkout
                       </p>
-                      <p className="mt-2 text-sm font-semibold text-[var(--admin-ink)]">
+                      <p className="mt-2 text-sm font-semibold text-gray-800">
                         {provider.isCheckoutConfigured ? "Configured" : "Missing credentials"}
                       </p>
                     </div>
                     <div className="rounded-[0.9rem] bg-white/70 px-4 py-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">
                         Webhook
                       </p>
-                      <p className="mt-2 text-sm font-semibold text-[var(--admin-ink)]">
+                      <p className="mt-2 text-sm font-semibold text-gray-800">
                         {provider.isWebhookConfigured ? "Configured" : "Needs setup"}
                       </p>
                     </div>
                   </div>
 
-                  <p className="mt-5 text-sm leading-6 text-[var(--admin-muted)]">
-                    Runtime mode: <span className="font-semibold text-[var(--admin-ink)]">{settings.mode}</span>
+                  <p className="mt-5 text-sm leading-6 text-gray-500">
+                    Runtime mode: <span className="font-semibold text-gray-800">{settings.mode}</span>
                   </p>
 
                   <div className="mt-5 flex flex-wrap gap-3">

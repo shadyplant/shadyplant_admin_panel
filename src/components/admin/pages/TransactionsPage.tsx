@@ -215,15 +215,15 @@ export default function TransactionsPage() {
         ].map((metric) => (
           <div
             key={metric.label}
-            className="rounded-[1rem] border border-[var(--admin-line)] bg-white p-4"
+            className="rounded-[1rem] border border-gray-100 bg-white p-4"
           >
-            <p className="text-xs font-semibold uppercase text-[var(--admin-muted)]">
+            <p className="text-xs font-semibold uppercase text-gray-500">
               {metric.label}
             </p>
-            <p className="mt-3 text-2xl font-semibold text-[var(--admin-ink)]">
+            <p className="mt-3 text-2xl font-semibold text-gray-800">
               {metric.value}
             </p>
-            <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)]">
+            <p className="mt-2 text-sm leading-6 text-gray-500">
               {metric.meta}
             </p>
           </div>
@@ -270,7 +270,7 @@ export default function TransactionsPage() {
               ))}
             </AdminSelect>
           </div>
-          <p className="text-sm font-semibold text-[var(--admin-muted)]">
+          <p className="text-sm font-semibold text-gray-500">
             {transactions.length} transaction records
           </p>
         </div>
@@ -287,26 +287,26 @@ export default function TransactionsPage() {
             <div className="overflow-x-auto admin-scrollbar-thin">
               <table className="min-w-full border-collapse">
                 <thead>
-                  <tr className="border-b border-[var(--admin-line)] bg-[#f8faf6] text-left">
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-[var(--admin-muted)]">
+                  <tr className="border-b border-gray-100 bg-gray-100 text-left">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-gray-500">
                       Transaction
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-gray-500">
                       Customer
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-gray-500">
                       Amount
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-gray-500">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-gray-500">
                       Gateway
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-gray-500">
                       Processed
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase text-gray-500">
                       Action
                     </th>
                   </tr>
@@ -326,7 +326,7 @@ export default function TransactionsPage() {
                     return (
                       <tr
                         key={transaction.id}
-                        className="border-b border-[var(--admin-line)] align-top transition hover:bg-[#fbfdf8]"
+                        className="border-b border-gray-100 align-top transition hover:bg-gray-50"
                       >
                         <td className="px-4 py-4">
                           <div className="min-w-[220px]">
@@ -341,40 +341,40 @@ export default function TransactionsPage() {
                                 </AdminPill>
                               ) : null}
                             </div>
-                            <p className="mt-3 text-sm font-semibold text-[var(--admin-ink)]">
+                            <p className="mt-3 text-sm font-semibold text-gray-800">
                               {title}
                             </p>
-                            <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                            <p className="mt-1 text-xs text-gray-500">
                               Tracking {transaction.trackingCode || "Not available"}
                             </p>
-                            <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                            <p className="mt-1 text-xs text-gray-500">
                               Created {formatAdminDate(transaction.createdAt)}
                             </p>
                           </div>
                         </td>
                         <td className="px-4 py-4">
                           <div className="min-w-[220px]">
-                            <p className="text-sm font-semibold text-[var(--admin-ink)]">
+                            <p className="text-sm font-semibold text-gray-800">
                               {transaction.customerName || "No customer name"}
                             </p>
-                            <p className="mt-1 text-sm text-[var(--admin-muted)]">
+                            <p className="mt-1 text-sm text-gray-500">
                               {transaction.customerPhone || "No phone"}
                             </p>
-                            <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                            <p className="mt-1 text-xs text-gray-500">
                               {transaction.customerEmail || "No email"}
                             </p>
                           </div>
                         </td>
                         <td className="px-4 py-4">
                           <div className="min-w-[170px]">
-                            <p className="text-sm font-semibold text-[var(--admin-accent)]">
+                            <p className="text-sm font-semibold text-gray-700">
                               {formatAdminCurrency(transaction.amount)}
                             </p>
-                            <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                            <p className="mt-1 text-xs text-gray-500">
                               Received{" "}
                               {formatAdminCurrency(transaction.receivedAmount)}
                             </p>
-                            <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                            <p className="mt-1 text-xs text-gray-500">
                               Outstanding{" "}
                               {formatAdminCurrency(transaction.outstandingAmount)}
                             </p>
@@ -393,7 +393,7 @@ export default function TransactionsPage() {
                                   "Unknown method",
                                 )}
                             </AdminPill>
-                            <span className="text-xs text-[var(--admin-muted)]">
+                            <span className="text-xs text-gray-500">
                               Provider: {transaction.provider || "Not available"}
                             </span>
                             {transaction.failureReason ? (
@@ -405,15 +405,15 @@ export default function TransactionsPage() {
                         </td>
                         <td className="px-4 py-4">
                           <div className="min-w-[240px]">
-                            <p className="text-sm font-semibold text-[var(--admin-ink)]">
+                            <p className="text-sm font-semibold text-gray-800">
                               {transaction.gatewayOrderId || "No gateway order ID"}
                             </p>
-                            <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                            <p className="mt-1 text-xs text-gray-500">
                               Payment ID:{" "}
                               {transaction.gatewayPaymentId || "Not available"}
                             </p>
                             {transaction.lastWebhookEvent ? (
-                              <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                              <p className="mt-1 text-xs text-gray-500">
                                 Webhook:{" "}
                                 {formatTransactionLabel(
                                   transaction.lastWebhookEvent,
@@ -425,12 +425,12 @@ export default function TransactionsPage() {
                         </td>
                         <td className="px-4 py-4">
                           <div className="min-w-[160px]">
-                            <p className="text-sm font-semibold text-[var(--admin-ink)]">
+                            <p className="text-sm font-semibold text-gray-800">
                               {transaction.processedAt
                                 ? formatAdminDate(transaction.processedAt)
                                 : "Not processed yet"}
                             </p>
-                            <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                            <p className="mt-1 text-xs text-gray-500">
                               {transaction.isMoneyReceived
                                 ? "Funds captured"
                                 : "Awaiting collection"}
@@ -442,12 +442,12 @@ export default function TransactionsPage() {
                             {transaction.orderId ? (
                               <Link
                                 href={`/orders/${transaction.orderId}`}
-                                className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
+                                className="inline-flex w-full items-center justify-center rounded-full bg-gray-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-700"
                               >
                                 Open order
                               </Link>
                             ) : (
-                              <span className="text-xs text-[var(--admin-muted)]">
+                              <span className="text-xs text-gray-500">
                                 No linked order
                               </span>
                             )}

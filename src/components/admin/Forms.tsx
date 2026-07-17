@@ -29,7 +29,7 @@ export function FormField({
 }
 
 export function inputClassName() {
-  return "w-full rounded-sm border border-[var(--admin-line-strong)] bg-white px-4 py-3 text-sm text-[var(--admin-ink)] outline-none transition placeholder:text-[#8a9b88] focus:border-[var(--admin-accent)] focus:ring-4 focus:ring-[var(--admin-accent-soft)]";
+  return "w-full rounded-sm border border-gray-300 bg-white px-4 py-3 text-sm text-gray-600 outline-none transition placeholder:text-gray-500 focus:border-[var(--admin-accent)] focus:ring-4 focus:ring-[var(--admin-accent-soft)]";
 }
 
 export function textareaClassName() {

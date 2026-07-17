@@ -16,21 +16,23 @@ export default function AdminPageHeader({
   actionHref,
 }: AdminPageHeaderProps) {
   return (
-    <div className="flex flex-col gap-3 border-b border-[var(--admin-line)] pb-4 md:flex-row md:items-end md:justify-between">
+    <div className="flex flex-col gap-3 border-b border-gray-100 pb-4 md:flex-row md:items-end md:justify-between">
       <div>
       
-        <h1 className="mt-1.5 text-2xl text-[var(--admin-ink)]">
+        <h1 className="mt-1.5 text-2xl text-gray-800">
           {title}
         </h1>
         {description ? (
-          <p className="mt-1 text-sm">{description}</p>
+          <p className="mt-1 text-sm text-gray-600">
+            {description}
+          </p>
         ) : null}
       </div>
 
       {actionLabel && actionHref ? (
         <Link
           href={actionHref}
-          className="inline-flex items-center justify-center rounded-full bg-[var(--admin-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
+          className="inline-flex items-center justify-center rounded-full bg-[#207958] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
         >
           {actionLabel}
         </Link>

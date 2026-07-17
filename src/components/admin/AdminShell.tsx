@@ -2,16 +2,20 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
   BadgePercent,
+  CheckCircle2,
   Mail,
   House,
   LayoutGrid,
+  Leaf,
   LogOut,
   Package,
+  Map,
+  AlertTriangle,
   PanelLeftClose,
   PanelLeftOpen,
   ReceiptText,
@@ -19,16 +23,21 @@ import {
   ShoppingCart,
   Settings2,
   Star,
+  Truck,
   UserCircle2,
   Users,
+  X,
+  Info,
 } from "lucide-react";
 import { useAdminAuth } from "@/components/admin/AdminAuthProvider";
+import { ADMIN_SNACKBAR_EVENT, type AdminSnackbarState } from "@/components/admin/AdminSnackbar";
 import {
   canViewCatalog,
   canViewCoupons,
   canViewCustomers,
   canViewMailer,
   canViewOrders,
+  canViewShippingZones,
   canViewReviews,
   canViewSettings,
   canViewTeam,
@@ -39,6 +48,36 @@ import type { AdminOrder, ApiResponse } from "@/lib/admin-api";
 const SIDEBAR_COLLAPSE_STORAGE_KEY = "ggn_admin_sidebar_collapsed";
 const ORDER_NOTIFICATION_STORAGE_KEY = "ggn_admin_last_seen_order_marker";
 const ORDER_POLL_INTERVAL_MS = 20000;
+const SNACKBAR_TONE_STYLES = {
+  success: {
+    panel: "border-[#cfe8d0] bg-[#eff8ef]",
+    label: "text-[#2f7a42]",
+    icon: "text-[#2f7a42]",
+    accent: "bg-[#2f7a42]",
+    action: "text-[#2f7a42] hover:bg-[#dff1e0]",
+  },
+  error: {
+    panel: "border-[#f4cfcf] bg-[#fff2f2]",
+    label: "text-[#b43c3c]",
+    icon: "text-[#b43c3c]",
+    accent: "bg-[#b43c3c]",
+    action: "text-[#b43c3c] hover:bg-[#fde4e4]",
+  },
+  warning: {
+    panel: "border-[#f1dcc1] bg-[#fff8ef]",
+    label: "text-[#bb6c1e]",
+    icon: "text-[#bb6c1e]",
+    accent: "bg-[#d78b2f]",
+    action: "text-[#bb6c1e] hover:bg-[#faead4]",
+  },
+  info: {
+    panel: "border-[#d9e1ea] bg-[#f4f7fb]",
+    label: "text-[#44607a]",
+    icon: "text-[#44607a]",
+    accent: "bg-[#44607a]",
+    action: "text-[#44607a] hover:bg-[#e5edf7]",
+  },
+} as const;
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: House, canAccess: () => true },
@@ -58,6 +97,12 @@ const navItems = [
     href: "/home-slider-banners",
     label: "Home Slider",
     icon: LayoutGrid,
+    canAccess: canViewCatalog,
+  },
+  {
+    href: "/lawn-grass-page",
+    label: "Lawn Grass",
+    icon: Leaf,
     canAccess: canViewCatalog,
   },
   {
@@ -103,6 +148,18 @@ const navItems = [
     canAccess: canViewSettings,
   },
   {
+    href: "/shipping-zones",
+    label: "Shipping",
+    icon: Map,
+    canAccess: canViewShippingZones,
+  },
+  {
+    href: "/delivery-charges",
+    label: "Charges",
+    icon: Truck,
+    canAccess: canViewShippingZones,
+  },
+  {
     href: "/reviews",
     label: "Reviews",
     icon: Star,
@@ -120,12 +177,6 @@ const navItems = [
 type OrderMarker = {
   id: string;
   createdAt: string;
-};
-
-type SnackbarState = {
-  title: string;
-  body: string;
-  href: string;
 };
 
 function isActivePath(pathname: string, href: string) {
@@ -235,7 +286,7 @@ export default function AdminShell({
   const pathname = usePathname();
   const router = useRouter();
   const { hydrated, isAuthenticated, staff, logout, authorizedRequest } = useAdminAuth();
-  const [snackbar, setSnackbar] = useState<SnackbarState | null>(null);
+  const [snackbar, setSnackbar] = useState<AdminSnackbarState | null>(null);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     if (typeof window === "undefined") {
@@ -247,6 +298,23 @@ export default function AdminShell({
   const isOrderWatcherReadyRef = useRef(false);
   const snackbarTimerRef = useRef<number | null>(null);
   const latestOrderMarkerRef = useRef<OrderMarker | null>(null);
+
+  const showNotification = useCallback((nextSnackbar: AdminSnackbarState) => {
+    setSnackbar({
+      tone: "success",
+      actionLabel: "Dismiss",
+      ...nextSnackbar,
+    });
+
+    if (snackbarTimerRef.current) {
+      window.clearTimeout(snackbarTimerRef.current);
+    }
+
+    snackbarTimerRef.current = window.setTimeout(() => {
+      setSnackbar(null);
+      snackbarTimerRef.current = null;
+    }, 9000);
+  }, []);
 
   useEffect(() => {
     if (!hydrated) {
@@ -274,6 +342,23 @@ export default function AdminShell({
   }, [isSidebarCollapsed]);
 
   useEffect(() => {
+    const handleSnackbarEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<AdminSnackbarState>;
+      if (!customEvent.detail) {
+        return;
+      }
+
+      showNotification(customEvent.detail);
+    };
+
+    window.addEventListener(ADMIN_SNACKBAR_EVENT, handleSnackbarEvent as EventListener);
+
+    return () => {
+      window.removeEventListener(ADMIN_SNACKBAR_EVENT, handleSnackbarEvent as EventListener);
+    };
+  }, [showNotification]);
+
+  useEffect(() => {
     if (!hydrated || !isAuthenticated || !staff || !canViewOrders(staff.role)) {
       isOrderWatcherReadyRef.current = false;
       latestOrderMarkerRef.current = null;
@@ -281,18 +366,6 @@ export default function AdminShell({
     }
 
     let cancelled = false;
-
-    const showNotification = (nextSnackbar: SnackbarState) => {
-      setSnackbar(nextSnackbar);
-
-      if (snackbarTimerRef.current) {
-        window.clearTimeout(snackbarTimerRef.current);
-      }
-
-      snackbarTimerRef.current = window.setTimeout(() => {
-        setSnackbar(null);
-      }, 9000);
-    };
 
     const syncOrders = async () => {
       try {
@@ -350,12 +423,14 @@ export default function AdminShell({
           playNewOrderSound();
           announceNewOrder(spokenMessage);
           showNotification({
+            tone: "info",
             title: orderCount === 1 ? "New order received" : `${orderCount} new orders received`,
             body:
               orderCount === 1
                 ? `${newestOrder.orderNumber} from ${newestOrder.fullName}`
                 : "Open orders to review the latest incoming requests.",
             href: orderCount === 1 ? `/orders/${newestOrder.id}` : "/orders",
+            actionLabel: orderCount === 1 ? "Open order" : "Open orders",
           });
         }
 
@@ -401,16 +476,16 @@ export default function AdminShell({
       >
         <aside className="min-h-0 border-r border-[var(--admin-line)] bg-[#ffffff] lg:sticky lg:top-0 lg:h-screen">
           <div className="admin-scrollbar-thin flex h-full min-h-0 flex-col overflow-y-auto px-5 py-6 [scrollbar-width:thin] [scrollbar-color:rgba(97,115,98,0.42)_transparent] [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar]:h-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(97,115,98,0.38)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(97,115,98,0.55)]">
-            <div className="flex shrink-0 items-center gap-2 rounded-[0.9rem] bg-[linear-gradient(145deg,#133c20,#205d2c)] px-3 py-3 text-white shadow-[0_24px_60px_rgba(19,60,32,0.28)]">
+            <div className="flex shrink-0 items-center gap-2 rounded-[0.9rem] px-3 py-3 text-gray-800">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/14">
                 <LayoutGrid className="h-[18px] w-[18px]" />
               </div>
               {!isSidebarCollapsed ? (
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[11px] font-semibold uppercase text-white/70">
-                    Grass Green Nursery
+                  <p className="truncate text-[11px] font-semibold uppercase text-gray-600">
+                    ShadyPlant
                   </p>
-                  <p className="truncate text-sm font-semibold text-white">
+                  <p className="truncate text-sm font-semibold text-gray-800">
                     Admin Panel
                   </p>
                 </div>
@@ -418,7 +493,7 @@ export default function AdminShell({
               <button
                 type="button"
                 onClick={() => setIsSidebarCollapsed((value) => !value)}
-                className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/18 lg:inline-flex"
+                className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white/10 text-gray-600 transition hover:bg-white/18 lg:inline-flex"
                 aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               >
@@ -440,11 +515,11 @@ export default function AdminShell({
                     key={item.href}
                     href={item.href}
                     className={`flex items-center rounded-xl px-3 py-3 text-sm font-semibold transition ${
-                      isSidebarCollapsed ? "justify-center" : "gap-3"
-                    } ${
+                    isSidebarCollapsed ? "justify-center" : "gap-3"
+                  } ${
                       active
                         ? "bg-[var(--admin-accent-soft)] text-[var(--admin-accent)]"
-                        : "text-[var(--admin-muted)] hover:bg-white hover:text-[var(--admin-ink)]"
+                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
                     }`}
                     aria-label={item.label}
                     title={isSidebarCollapsed ? item.label : undefined}
@@ -452,8 +527,8 @@ export default function AdminShell({
                     <span
                       className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
                         active
-                          ? "bg-[var(--admin-accent)] text-white"
-                          : "bg-[var(--admin-chip)] text-[var(--admin-muted)]"
+                          ? "bg-[#207958] text-white"
+                          : " text-gray-500"
                       }`}
                     >
                       <Icon className="h-[18px] w-[18px]" />
@@ -484,10 +559,10 @@ export default function AdminShell({
                     </span>
                     {!isSidebarCollapsed ? (
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-[var(--admin-ink)]">
+                        <p className="truncate text-sm font-semibold text-gray-700">
                           {staff.fullName}
                         </p>
-                        <p className="truncate text-xs uppercase tracking-[0.14em] text-[var(--admin-muted)]">
+                        <p className="truncate text-xs uppercase tracking-[0.14em] text-gray-500">
                           {staff.role}
                         </p>
                       </div>
@@ -523,35 +598,78 @@ export default function AdminShell({
       </div>
 
       {snackbar ? (
-        <div className="pointer-events-none fixed bottom-5 right-5 z-[120] max-w-sm">
-          <div className="pointer-events-auto rounded-[1.35rem] border border-[#d5e1cb] bg-white px-4 py-4 shadow-[0_24px_60px_rgba(16,40,17,0.18)]">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-accent)]">
-                  Live notification
+        <div className="pointer-events-none fixed right-5 top-5 z-[120] w-[min(92vw,32rem)]">
+          <div
+            className={`admin-snackbar-enter pointer-events-auto relative overflow-hidden rounded-[1.25rem] border px-5 py-4 shadow-[0_18px_40px_rgba(16,40,17,0.14)] ${
+              SNACKBAR_TONE_STYLES[snackbar.tone || "success"].panel
+            }`}
+          >
+            <div className="flex items-start gap-4 pr-8">
+              <div
+                className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/70 ${
+                  SNACKBAR_TONE_STYLES[snackbar.tone || "success"].icon
+                }`}
+              >
+                {snackbar.tone === "error" ? (
+                  <AlertTriangle className="h-4 w-4" />
+                ) : snackbar.tone === "warning" ? (
+                  <Info className="h-4 w-4" />
+                ) : snackbar.tone === "info" ? (
+                  <Info className="h-4 w-4" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4" />
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p
+                  className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${
+                    SNACKBAR_TONE_STYLES[snackbar.tone || "success"].label
+                  }`}
+                >
+                  {snackbar.tone === "error"
+                    ? "Error"
+                    : snackbar.tone === "warning"
+                      ? "Warning"
+                      : snackbar.tone === "info"
+                        ? "Info"
+                        : "Success"}
                 </p>
-                <h2 className="mt-1 text-base font-black tracking-[-0.03em] text-[var(--admin-ink)]">
+                <h2 className="mt-1 text-[15px] font-black tracking-[-0.03em] text-[var(--admin-ink)]">
                   {snackbar.title}
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-[var(--admin-muted)]">
                   {snackbar.body}
                 </p>
               </div>
+
               <button
                 type="button"
                 onClick={() => setSnackbar(null)}
-                className="rounded-full border border-[var(--admin-line)] px-2.5 py-1 text-xs font-bold text-[var(--admin-muted)] transition hover:bg-[var(--admin-chip)]"
+                className="absolute right-3 top-3 rounded-full p-1 text-[var(--admin-muted)] transition hover:bg-white/70 hover:text-[var(--admin-ink)]"
+                aria-label="Dismiss notification"
               >
-                Close
+                <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="mt-4">
-              <Link
-                href={snackbar.href}
-                className="inline-flex items-center justify-center rounded-full bg-[var(--admin-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
-              >
-                Open order
-              </Link>
+
+            <div className="mt-4 h-1 w-full overflow-hidden rounded-full bg-white/70">
+              <div
+                className={`admin-snackbar-progress h-full w-full ${SNACKBAR_TONE_STYLES[snackbar.tone || "success"].accent}`}
+              />
+            </div>
+
+            <div className="mt-4 flex justify-start">
+              {snackbar.href ? (
+                <Link
+                  href={snackbar.href}
+                  className={`inline-flex items-center justify-center rounded-full border border-transparent px-4 py-2 text-sm font-semibold transition ${
+                    SNACKBAR_TONE_STYLES[snackbar.tone || "success"].action
+                  }`}
+                >
+                  {snackbar.actionLabel || "Open"}
+                </Link>
+              )  : null}
             </div>
           </div>
         </div>

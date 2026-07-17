@@ -54,6 +54,10 @@ export function canViewMailer(role: string | null | undefined) {
   return hasMinimumStaffRole(role, "manager");
 }
 
+export function canViewShippingZones(role: string | null | undefined) {
+  return hasMinimumStaffRole(role, "manager");
+}
+
 export function canManageCatalog(role: string | null | undefined) {
   return hasMinimumStaffRole(role, "catalog");
 }

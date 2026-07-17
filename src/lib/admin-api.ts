@@ -21,11 +21,19 @@ export type AdminStaff = {
 export type AdminProduct = {
   id: string;
   productId: string;
+  sku: string;
+  skuId: string;
   name: string;
   category: string;
   variety: string;
   containerSize: string;
   height: string;
+  growthSpeed: string;
+  countryOfOrigin: string;
+  manufacturedBy: string;
+  marketedBy: string;
+  potMaterial: string;
+  hsnCode: string;
   price: number;
   mrp: number;
   weight: number;
@@ -43,8 +51,18 @@ export type AdminProduct = {
   usesImages: string[];
   videoClips: AdminProductVideoClip[];
   tags: string[];
+  leafColor: string;
+  flowerColor: string;
+  lightRequirement: string;
+  waterRequirement: string;
+  plantPlacement: string;
+  usageArea: string;
+  plantAgeMonths: number | null;
+  productionCapacity: number | null;
+  packagingDetails: string;
   optionGroups: AdminProductOptionGroup[];
   detailSections: AdminProductDetailSection[];
+  quantityPricingSlabs: AdminProductQuantityPricingSlab[];
   stockAlertCount: number;
   stockAlerts?: AdminProductStockAlert[];
 };
@@ -134,7 +152,131 @@ export type AdminProductOptionGroup = {
 export type AdminProductDetailSection = {
   title: string;
   description: string;
+  icon: string;
   sortOrder: number;
+};
+
+export type AdminProductQuantityPricingSlab = {
+  key: string;
+  label: string;
+  minQuantity: number;
+  maxQuantity: number | null;
+  pricePerUnit: number;
+  note: string;
+};
+
+export type AdminLawnGrassPageSettings = {
+  productId: string;
+  product: AdminProduct | null;
+  updatedAt: string | null;
+  updatedByStaffAccountId: string | null;
+};
+
+export type AdminShippingCountry = {
+  id: string;
+  iso2: string;
+  iso3: string;
+  name: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type AdminShippingState = {
+  id: string;
+  countryId: string;
+  code: string;
+  name: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type AdminShippingRegion = {
+  id: string;
+  stateId: string;
+  countryId: string | null;
+  countryCode: string;
+  countryName: string;
+  stateCode: string;
+  stateName: string;
+  defaultService: boolean;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type AdminShippingRuleType =
+  | "PIN"
+  | "PIN_RANGE"
+  | "CITY"
+  | "DISTRICT"
+  | "POLYGON"
+  | "LATLNG";
+
+export type AdminShippingRuleAction = "ALLOW" | "BLOCK";
+
+export type AdminShippingRule = {
+  id: string;
+  shippingRegionId: string;
+  countryId: string | null;
+  countryCode: string;
+  countryName: string;
+  stateId: string | null;
+  stateCode: string;
+  stateName: string;
+  action: AdminShippingRuleAction;
+  ruleType: AdminShippingRuleType;
+  pin: string;
+  startPin: string;
+  endPin: string;
+  reason: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type AdminDeliveryChargeProfile = {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  isActive: boolean;
+  sortOrder: number;
+  metadata: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type AdminDeliveryChargeSlabCalculationMode =
+  | "flat"
+  | "per_distance"
+  | "per_weight_unit";
+
+export type AdminDeliveryChargeSlab = {
+  id: string;
+  profileId: string;
+  profileCode: string;
+  profileName: string;
+  ruleKey: string;
+  name: string;
+  description: string;
+  notes: string;
+  isActive: boolean;
+  sortOrder: number;
+  calculationMode: AdminDeliveryChargeSlabCalculationMode;
+  rate: number;
+  weightUnitKg: number;
+  minWeightKg: number | null;
+  minWeightInclusive: boolean;
+  maxWeightKg: number | null;
+  maxWeightInclusive: boolean;
+  minDistanceKm: number | null;
+  minDistanceInclusive: boolean;
+  maxDistanceKm: number | null;
+  maxDistanceInclusive: boolean;
+  metadata: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type AdminService = {
@@ -178,7 +320,9 @@ export type AdminHomeSliderBanner = {
   organizationId: string;
   itemKey: string;
   title: string;
+  actionType: "link" | "popup";
   href: string;
+  popupKey: string;
   desktopImage: string;
   mobileImage: string;
   isActive: boolean;

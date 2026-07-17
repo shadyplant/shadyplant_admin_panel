@@ -639,7 +639,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-1">
       <AdminPageHeader
         title="Orders"
         description="Track fulfillment, payment state, customer contact details, and recent order activity from one compact queue."
@@ -693,12 +693,12 @@ export default function OrdersPage() {
               ].map((metric) => (
                 <div
                   key={metric.label}
-                  className={`rounded-[1rem] border border-[var(--admin-line)] px-4 py-4 ${metric.tone}`}
+                  className={`rounded-[1rem] border border-gray-300 px-4 py-4`}
                 >
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
                     {metric.label}
                   </p>
-                  <p className="mt-3 text-3xl font-black tracking-[-0.05em] text-[var(--admin-ink)]">
+                  <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-gray-800">
                     {metric.value}
                   </p>
                 </div>
@@ -825,26 +825,26 @@ export default function OrdersPage() {
             <div className="overflow-x-auto">
               <table className="min-w-full border-collapse">
                 <thead>
-                  <tr className="border-b border-[var(--admin-line)] bg-[#f8faf6] text-left">
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                  <tr className="border-b border-gray-300 bg-gray-100 text-left">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
                       Order
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
                       Customer
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
                       Delivery
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
                       Amount
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
                       Order update
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
                       Action
                     </th>
                   </tr>
@@ -853,40 +853,40 @@ export default function OrdersPage() {
                   {paginatedOrders.map((order) => (
                     <tr
                       key={order.id}
-                      className="border-b border-[var(--admin-line)] align-top transition hover:bg-[#fbfdf8]"
+                      className="border-b border-gray-300 align-top transition hover:bg-[rgba(0,0,0,0.03)]"
                     >
                       <td className="px-4 py-4">
                         <div className="min-w-[190px]">
-                          <p className="text-sm font-bold text-[var(--admin-ink)]">
+                          <p className="text-sm font-bold text-gray-700">
                             {order.orderNumber}
                           </p>
-                          <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                          <p className="mt-1 text-xs text-gray-500">
                             {order.trackingCode || "No tracking code"}
                           </p>
-                          <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                          <p className="mt-1 text-xs text-gray-500">
                             Created {formatCompactDate(order.createdAt)}
                           </p>
                         </div>
                       </td>
                       <td className="px-4 py-4">
                         <div className="min-w-[220px]">
-                          <p className="text-sm font-semibold text-[var(--admin-ink)]">
+                          <p className="text-sm font-semibold text-gray-700">
                             {order.fullName}
                           </p>
-                          <p className="mt-1 text-sm text-[var(--admin-muted)]">
+                          <p className="mt-1 text-sm text-gray-500">
                             {order.phoneNumber || "No phone"}
                           </p>
-                          <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                          <p className="mt-1 text-xs text-gray-500">
                             {order.email || "No email"}
                           </p>
                         </div>
                       </td>
                       <td className="px-4 py-4">
                         <div className="min-w-[160px]">
-                          <p className="text-sm font-semibold text-[var(--admin-ink)]">
+                          <p className="text-sm font-semibold text-gray-700">
                             {formatCompactDate(order.deliveryDate || order.createdAt)}
                           </p>
-                          <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                          <p className="mt-1 text-xs text-gray-500">
                             {order.paymentMethodLabel ||
                               order.paymentMethod ||
                               "Payment method unavailable"}
@@ -895,10 +895,10 @@ export default function OrdersPage() {
                       </td>
                       <td className="px-4 py-4">
                         <div className="min-w-[140px]">
-                          <p className="text-sm font-black text-[var(--admin-accent)]">
+                          <p className="text-sm font-semibold text-gray-700">
                             {formatAdminCurrency(resolveOrderTotal(order.pricing))}
                           </p>
-                          <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                          <p className="mt-1 text-xs text-gray-500">
                             Delivery{" "}
                             {formatAdminCurrency(resolveDeliveryCharge(order.pricing))}
                           </p>
@@ -911,7 +911,7 @@ export default function OrdersPage() {
                           />
                           {order.paymentStatus &&
                           order.paymentStatus !== order.currentStatus ? (
-                            <span className="text-xs text-[var(--admin-muted)]">
+                            <span className="text-xs text-gray-500">
                               Payment:{" "}
                               {String(order.paymentStatus).replaceAll("_", " ")}
                             </span>
@@ -967,7 +967,7 @@ export default function OrdersPage() {
                         <div className="min-w-[120px]">
                           <Link
                             href={`/orders/${order.id}`}
-                            className="inline-flex items-center justify-center rounded-full bg-[var(--admin-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
+                            className="inline-flex items-center justify-center rounded-full bg-[#207958] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
                           >
                             Open
                           </Link>

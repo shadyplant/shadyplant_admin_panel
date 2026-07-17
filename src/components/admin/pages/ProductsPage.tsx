@@ -350,26 +350,26 @@ export default function ProductsPage() {
             <div className="overflow-x-auto">
               <table className="min-w-full border-collapse">
                 <thead>
-                  <tr className="border-b border-[var(--admin-line)] bg-[linear-gradient(180deg,#fbfdf8,#f4f8ef)] text-left">
-                    <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                  <tr className="border-b border-gray-300 bg-gray-100 text-left">
+                    <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-800">
                       Product
                     </th>
-                    <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-800">
                       Category
                     </th>
-                    <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-800">
                       Price
                     </th>
-                    <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-800">
                       Stock
                     </th>
-                    <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-800">
                       Stock Adjust
                     </th>
-                    <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-800">
                       Flags
                     </th>
-                    <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                    <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-800">
                       Actions
                     </th>
                   </tr>
@@ -378,7 +378,7 @@ export default function ProductsPage() {
                   {paginatedProducts.map((product) => (
                     <tr
                       key={product.id}
-                      className="border-b border-[var(--admin-line)] align-top transition hover:bg-[#fbfdf8]"
+                      className="border-b border-gray-300 align-top transition hover:bg-[#fbfdf8]"
                     >
                       <td className="px-5 py-3">
                         <div className="flex min-w-[280px] items-start gap-3">
@@ -392,19 +392,19 @@ export default function ProductsPage() {
                                 sizes="56px"
                               />
                             ) : (
-                              <div className="flex h-full items-center justify-center text-[11px] font-medium text-[var(--admin-muted)]">
+                              <div className="flex h-full items-center justify-center text-[11px] font-medium text-gray-800">
                                 No image
                               </div>
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--admin-muted)]">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-800">
                               {product.productId}
                             </p>
-                            <h2 className="mt-0.5 text-sm font-medium text-[var(--admin-ink)]">
+                            <h2 className="mt-0.5 text-sm font-medium text-gray-800 line-clamp-1 max-w-xl">
                               {product.name}
                             </h2>
-                            <p className="mt-0.5 line-clamp-1 max-w-xl text-sm leading-5 text-[var(--admin-muted)]">
+                            <p className="mt-0.5 line-clamp-1 max-w-xl text-sm leading-5 text-gray-800">
                               {product.description || "No description"}
                             </p>
                           </div>
@@ -412,21 +412,21 @@ export default function ProductsPage() {
                       </td>
                       <td className="px-5 py-3">
                         <div className="min-w-[150px]">
-                          <p className="text-sm font-medium text-[var(--admin-ink)]">
+                          <p className="text-sm font-medium text-gray-800">
                             {product.category || "Uncategorized"}
                           </p>
                         </div>
                       </td>
                       <td className="px-5 py-3">
                         <div className="min-w-[120px]">
-                          <p className="text-sm font-medium text-[var(--admin-accent)]">
+                          <p className="text-sm font-medium text-gray-800">
                             {formatAdminCurrency(product.price)}
                           </p>
                         </div>
                       </td>
                       <td className="px-5 py-3">
                         <div className="min-w-[120px]">
-                          <p className="text-sm font-medium text-[var(--admin-ink)]">
+                          <p className="text-sm font-medium text-gray-800">
                             {product.stock > 0 ? product.stock : 0}
                           </p>
                         </div>
@@ -466,7 +466,7 @@ export default function ProductsPage() {
                         <div className="flex min-w-[180px] flex-row items-center gap-2">
                           <Link
                             href={`/products/${product.id}`}
-                            className="inline-flex min-w-[112px] items-center justify-center gap-2 rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-[var(--admin-accent)] transition hover:text-[var(--admin-ink)]"
+                            className="inline-flex min-w-[112px] items-center justify-center gap-2 rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-gray-800 transition hover:text-[var(--admin-ink)]"
                           >
                             <PencilLine className="h-4 w-4 shrink-0" />
                             Edit
@@ -515,13 +515,13 @@ export default function ProductsPage() {
 
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div className="space-y-3 rounded-[1rem] bg-[var(--admin-chip)] p-4">
-                <div className="text-sm text-[var(--admin-muted)]">
+                <div className="text-sm text-gray-800">
                   Product
                 </div>
                 <div className="text-base font-black text-[var(--admin-ink)]">
                   {confirmProduct.name}
                 </div>
-                <div className="text-sm text-[var(--admin-muted)]">
+                <div className="text-sm text-gray-800">
                   Current stock: <span className="font-semibold text-[var(--admin-ink)]">{confirmProduct.stock}</span>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
@@ -554,12 +554,12 @@ export default function ProductsPage() {
 
               <div className="space-y-3">
                 <div className="rounded-[1rem] border border-[var(--admin-line)] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-800">
                     Recent audit logs
                   </p>
                   <div className="mt-3 space-y-3">
                     {logsLoading ? (
-                      <p className="text-sm text-[var(--admin-muted)]">Loading logs...</p>
+                      <p className="text-sm text-gray-800">Loading logs...</p>
                     ) : stockLogs.length ? (
                       stockLogs.map((log) => (
                         <div
@@ -572,21 +572,21 @@ export default function ProductsPage() {
                                 ? `+${log.quantity}`
                                 : `Set to ${log.currentStock}`}
                             </span>
-                            <span className="text-xs uppercase tracking-[0.14em] text-[var(--admin-muted)]">
+                            <span className="text-xs uppercase tracking-[0.14em] text-gray-800">
                               {log.reason.replaceAll("_", " ")}
                             </span>
                           </div>
-                          <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                          <p className="mt-1 text-xs text-gray-800">
                             {log.previousStock} to {log.currentStock}
                             {log.actor.email ? ` by ${log.actor.email}` : ""}
                           </p>
                           {log.note ? (
-                            <p className="mt-1 text-xs text-[var(--admin-muted)]">{log.note}</p>
+                            <p className="mt-1 text-xs text-gray-800">{log.note}</p>
                           ) : null}
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-[var(--admin-muted)]">No stock audit logs yet.</p>
+                      <p className="text-sm text-gray-800">No stock audit logs yet.</p>
                     )}
                   </div>
                 </div>

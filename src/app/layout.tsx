@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GGN Admin Panel",
-  description: "Management workspace for Grass Green Nursery commerce operations.",
+  title: "ShadyPlant Admin Panel",
+  description: "Management workspace for ShadyPlant",
 };
 
 export default function RootLayout({

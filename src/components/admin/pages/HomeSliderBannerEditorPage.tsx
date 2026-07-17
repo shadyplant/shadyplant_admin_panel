@@ -8,6 +8,7 @@ import CatalogMediaAssistant from "@/components/admin/CatalogMediaAssistant";
 import { useAdminAuth } from "@/components/admin/AdminAuthProvider";
 import { AdminErrorCard, AdminLoadingCard } from "@/components/admin/AdminDataState";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import { showAdminSnackbar } from "@/components/admin/AdminSnackbar";
 import MediaUploadInput from "@/components/admin/MediaUploadInput";
 import { AdminActionButton, AdminPanel } from "@/components/admin/AdminUi";
 import { FormField, FormGrid, inputClassName } from "@/components/admin/Forms";
@@ -21,7 +22,9 @@ type HomeSliderBannerEditorPageProps = {
 type HomeSliderBannerFormState = {
   itemKey: string;
   title: string;
+  actionType: "link" | "popup";
   href: string;
+  popupKey: string;
   desktopImage: string;
   mobileImage: string;
   sortOrder: string;
@@ -31,7 +34,9 @@ type HomeSliderBannerFormState = {
 const emptyForm: HomeSliderBannerFormState = {
   itemKey: "",
   title: "",
+  actionType: "link",
   href: "/search",
+  popupKey: "lawn-grass-estimate",
   desktopImage: "",
   mobileImage: "",
   sortOrder: "100",
@@ -42,7 +47,9 @@ function mapItemToForm(item: AdminHomeSliderBanner): HomeSliderBannerFormState {
   return {
     itemKey: item.itemKey || "",
     title: item.title || "",
+    actionType: item.actionType === "popup" ? "popup" : "link",
     href: item.href || "/search",
+    popupKey: item.popupKey || "lawn-grass-estimate",
     desktopImage: item.desktopImage || "",
     mobileImage: item.mobileImage || "",
     sortOrder: String(item.sortOrder ?? 100),
@@ -54,7 +61,9 @@ function buildPayload(form: HomeSliderBannerFormState) {
   return {
     itemKey: form.itemKey.trim() || undefined,
     title: form.title.trim(),
+    actionType: form.actionType,
     href: form.href.trim(),
+    popupKey: form.actionType === "popup" ? form.popupKey.trim() : "",
     desktopImage: form.desktopImage.trim(),
     mobileImage: form.mobileImage.trim(),
     sortOrder: Number(form.sortOrder || 0),
@@ -162,6 +171,11 @@ export default function HomeSliderBannerEditorPage({
         );
 
       setForm(mapItemToForm(response.data.item));
+      showAdminSnackbar({
+        tone: "success",
+        title: itemId ? "Home slider banner updated" : "Home slider banner created",
+        body: `${response.data.item.title} was saved successfully.`,
+      });
       setSuccessMessage(
         itemId
           ? "Home slider banner updated successfully."
@@ -172,6 +186,14 @@ export default function HomeSliderBannerEditorPage({
         router.replace(`/home-slider-banners/${response.data.item.id}`);
       }
     } catch (nextError) {
+      showAdminSnackbar({
+        tone: "error",
+        title: itemId ? "Home slider banner update failed" : "Home slider banner create failed",
+        body:
+          nextError instanceof Error
+            ? nextError.message
+            : "Unable to save home slider banner.",
+      });
       setError(
         nextError instanceof Error
           ? nextError.message
@@ -199,8 +221,21 @@ export default function HomeSliderBannerEditorPage({
       await authorizedRequest(`/admin/home-slider-banners/${itemId}`, {
         method: "DELETE",
       });
+      showAdminSnackbar({
+        tone: "success",
+        title: "Home slider banner deleted",
+        body: `${form.title || "This banner"} was removed successfully.`,
+      });
       router.replace("/home-slider-banners");
     } catch (nextError) {
+      showAdminSnackbar({
+        tone: "error",
+        title: "Home slider banner delete failed",
+        body:
+          nextError instanceof Error
+            ? nextError.message
+            : "Unable to delete home slider banner.",
+      });
       setError(
         nextError instanceof Error
           ? nextError.message
@@ -252,14 +287,46 @@ export default function HomeSliderBannerEditorPage({
                 required
               />
             </FormField>
-            <FormField label="Href">
-              <input
-                value={form.href}
-                onChange={(event) => setForm({ ...form, href: event.target.value })}
+            <FormField label="Banner action">
+              <select
+                value={form.actionType}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    actionType:
+                      event.target.value === "popup" ? "popup" : "link",
+                  })
+                }
                 className={inputClassName()}
-                placeholder="/search?category=Lawn%20Grass"
-              />
+              >
+                <option value="link">Open URL page</option>
+                <option value="popup">Open popup</option>
+              </select>
             </FormField>
+            {form.actionType === "popup" ? (
+              <FormField label="Popup">
+                <select
+                  value={form.popupKey}
+                  onChange={(event) =>
+                    setForm({ ...form, popupKey: event.target.value })
+                  }
+                  className={inputClassName()}
+                >
+                  <option value="lawn-grass-estimate">
+                    Lawn grass order estimate
+                  </option>
+                </select>
+              </FormField>
+            ) : (
+              <FormField label="Href">
+                <input
+                  value={form.href}
+                  onChange={(event) => setForm({ ...form, href: event.target.value })}
+                  className={inputClassName()}
+                  placeholder="/search?category=Lawn%20Grass"
+                />
+              </FormField>
+            )}
             <FormField label="Sort order">
               <input
                 type="number"
