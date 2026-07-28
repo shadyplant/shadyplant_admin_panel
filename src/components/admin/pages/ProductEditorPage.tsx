@@ -7,13 +7,17 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ImagePlus, Plus, Trash2, X } from "lucide-react";
 import { useAdminAuth } from "@/components/admin/AdminAuthProvider";
-import { AdminErrorCard, AdminLoadingCard } from "@/components/admin/AdminDataState";
-import { showAdminSnackbar } from "@/components/admin/AdminSnackbar";
 import {
-  AdminActionButton,
-  AdminPanel,
-} from "@/components/admin/AdminUi";
-import { FormField, inputClassName, textareaClassName } from "@/components/admin/Forms";
+  AdminErrorCard,
+  AdminLoadingCard,
+} from "@/components/admin/AdminDataState";
+import { showAdminSnackbar } from "@/components/admin/AdminSnackbar";
+import { AdminActionButton, AdminPanel } from "@/components/admin/AdminUi";
+import {
+  FormField,
+  inputClassName,
+  textareaClassName,
+} from "@/components/admin/Forms";
 import type {
   AdminProduct,
   AdminProductDetailSection,
@@ -24,7 +28,10 @@ import type {
   AdminProductOptionGroup,
   ApiResponse,
 } from "@/lib/admin-api";
-import { splitCommaSeparatedValues, toCommaSeparatedValue } from "@/lib/admin-utils";
+import {
+  splitCommaSeparatedValues,
+  toCommaSeparatedValue,
+} from "@/lib/admin-utils";
 import { canManageCatalog } from "@/lib/admin-permissions";
 
 type ProductEditorPageProps = {
@@ -216,28 +223,44 @@ function mapOptionToForm(option: AdminProductOption): ProductOptionFormState {
   return {
     key: option.key || "",
     label: option.label || "",
-    value: option.value === null || option.value === undefined ? "" : String(option.value),
+    value:
+      option.value === null || option.value === undefined
+        ? ""
+        : String(option.value),
     unit: option.unit || "",
     note: option.note || "",
-    price: option.price === null || option.price === undefined ? "" : String(option.price),
-    mrp: option.mrp === null || option.mrp === undefined ? "" : String(option.mrp),
-    stock: option.stock === null || option.stock === undefined ? "" : String(option.stock),
+    price:
+      option.price === null || option.price === undefined
+        ? ""
+        : String(option.price),
+    mrp:
+      option.mrp === null || option.mrp === undefined ? "" : String(option.mrp),
+    stock:
+      option.stock === null || option.stock === undefined
+        ? ""
+        : String(option.stock),
     packLabel: option.packLabel || "",
-    weight: option.weight === null || option.weight === undefined ? "" : String(option.weight),
+    weight:
+      option.weight === null || option.weight === undefined
+        ? ""
+        : String(option.weight),
     isDefault: Boolean(option.isDefault),
     isDisabled: Boolean(option.isDisabled),
   };
 }
 
-function mapOptionGroupToForm(group: AdminProductOptionGroup): ProductOptionGroupFormState {
+function mapOptionGroupToForm(
+  group: AdminProductOptionGroup,
+): ProductOptionGroupFormState {
   return {
     key: group.key || "",
     title: group.title || "",
     subtitle: group.subtitle || "",
     guideLabel: group.guideLabel || "",
-    options: Array.isArray(group.options) && group.options.length
-      ? group.options.map(mapOptionToForm)
-      : [emptyOption()],
+    options:
+      Array.isArray(group.options) && group.options.length
+        ? group.options.map(mapOptionToForm)
+        : [emptyOption()],
   };
 }
 
@@ -258,7 +281,10 @@ function mapQuantityPricingSlabToForm(
     key: slab.key || "",
     label: slab.label || "",
     minQuantity: String(slab.minQuantity ?? ""),
-    maxQuantity: slab.maxQuantity === null || slab.maxQuantity === undefined ? "" : String(slab.maxQuantity),
+    maxQuantity:
+      slab.maxQuantity === null || slab.maxQuantity === undefined
+        ? ""
+        : String(slab.maxQuantity),
     pricePerUnit: String(slab.pricePerUnit ?? ""),
     note: slab.note || "",
   };
@@ -305,7 +331,8 @@ function mapProductToForm(product: AdminProduct): ProductFormState {
         ? ""
         : String(product.plantAgeMonths),
     productionCapacity:
-      product.productionCapacity === null || product.productionCapacity === undefined
+      product.productionCapacity === null ||
+      product.productionCapacity === undefined
         ? ""
         : String(product.productionCapacity),
     packagingDetails: product.packagingDetails || "",
@@ -341,11 +368,14 @@ function mapProductToForm(product: AdminProduct): ProductFormState {
   };
 }
 
-function normalizeOptionForPayload(option: ProductOptionFormState): AdminProductOption | null {
+function normalizeOptionForPayload(
+  option: ProductOptionFormState,
+): AdminProductOption | null {
   const label = option.label.trim();
   const unit = option.unit.trim();
   const parsedValue = Number(option.value);
-  const value = Number.isFinite(parsedValue) && parsedValue >= 0 ? parsedValue : null;
+  const value =
+    Number.isFinite(parsedValue) && parsedValue >= 0 ? parsedValue : null;
   const parsedPrice = Number(option.price);
   const price =
     Number.isFinite(parsedPrice) && parsedPrice >= 0 ? parsedPrice : null;
@@ -368,7 +398,8 @@ function normalizeOptionForPayload(option: ProductOptionFormState): AdminProduct
   }
 
   return {
-    key: option.key.trim() || label || `${value ?? "option"}-${unit || "custom"}`,
+    key:
+      option.key.trim() || label || `${value ?? "option"}-${unit || "custom"}`,
     label,
     value,
     unit,
@@ -383,7 +414,9 @@ function normalizeOptionForPayload(option: ProductOptionFormState): AdminProduct
   };
 }
 
-function normalizeOptionGroupsForPayload(groups: ProductOptionGroupFormState[]) {
+function normalizeOptionGroupsForPayload(
+  groups: ProductOptionGroupFormState[],
+) {
   return groups.flatMap((group) => {
     const options = group.options
       .map(normalizeOptionForPayload)
@@ -400,7 +433,9 @@ function normalizeOptionGroupsForPayload(groups: ProductOptionGroupFormState[]) 
     const explicitDefaultIndex = options.findIndex(
       (option) => option.isDefault && !option.isDisabled,
     );
-    const fallbackDefaultIndex = options.findIndex((option) => !option.isDisabled);
+    const fallbackDefaultIndex = options.findIndex(
+      (option) => !option.isDisabled,
+    );
     const selectedIndex =
       explicitDefaultIndex >= 0
         ? explicitDefaultIndex
@@ -455,20 +490,27 @@ function normalizeQuantityPricingSlabsForPayload(
     const label = slab.label.trim();
     const minQuantity = Math.max(1, Math.floor(Number(slab.minQuantity || 1)));
     const maxQuantityRaw = slab.maxQuantity.trim();
-    const maxQuantity =
-      !maxQuantityRaw
-        ? null
-        : Math.max(minQuantity, Math.floor(Number(maxQuantityRaw)));
+    const maxQuantity = !maxQuantityRaw
+      ? null
+      : Math.max(minQuantity, Math.floor(Number(maxQuantityRaw)));
     const pricePerUnit = Number(slab.pricePerUnit);
 
-    if ((!key && !label && !minQuantity) || !Number.isFinite(pricePerUnit) || pricePerUnit < 0) {
+    if (
+      (!key && !label && !minQuantity) ||
+      !Number.isFinite(pricePerUnit) ||
+      pricePerUnit < 0
+    ) {
       return [];
     }
 
     return [
       {
         key: key || label || `slab-${index + 1}`,
-        label: label || (maxQuantity !== null ? `${minQuantity}-${maxQuantity}` : `${minQuantity}+`),
+        label:
+          label ||
+          (maxQuantity !== null
+            ? `${minQuantity}-${maxQuantity}`
+            : `${minQuantity}+`),
         minQuantity,
         maxQuantity,
         pricePerUnit,
@@ -485,7 +527,9 @@ function buildPayload(form: ProductFormState) {
     }
 
     const parsedValue = Math.floor(Number(value));
-    return Number.isFinite(parsedValue) && parsedValue >= 0 ? parsedValue : undefined;
+    return Number.isFinite(parsedValue) && parsedValue >= 0
+      ? parsedValue
+      : undefined;
   };
 
   return {
@@ -529,11 +573,15 @@ function buildPayload(form: ProductFormState) {
     tags: splitCommaSeparatedValues(form.tags),
     optionGroups: normalizeOptionGroupsForPayload(form.optionGroups),
     detailSections: normalizeDetailSectionsForPayload(form.detailSections),
-    quantityPricingSlabs: normalizeQuantityPricingSlabsForPayload(form.quantityPricingSlabs),
+    quantityPricingSlabs: normalizeQuantityPricingSlabsForPayload(
+      form.quantityPricingSlabs,
+    ),
   };
 }
 
-export default function ProductEditorPage({ productId }: ProductEditorPageProps) {
+export default function ProductEditorPage({
+  productId,
+}: ProductEditorPageProps) {
   const router = useRouter();
   const { authorizedRequest, staff } = useAdminAuth();
   const [form, setForm] = useState<ProductFormState>(emptyForm);
@@ -543,31 +591,49 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [stockAlerts, setStockAlerts] = useState<AdminProductStockAlert[]>([]);
-  const [imageModalSection, setImageModalSection] = useState<"product" | "uses" | null>(null);
-  const [selectedImageSlotIndex, setSelectedImageSlotIndex] = useState<number | null>(0);
+  const [imageModalSection, setImageModalSection] = useState<
+    "product" | "uses" | null
+  >(null);
+  const [selectedImageSlotIndex, setSelectedImageSlotIndex] = useState<
+    number | null
+  >(0);
   const [draftImageUrl, setDraftImageUrl] = useState("");
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
-  const [pendingImagePreviewUrl, setPendingImagePreviewUrl] = useState<string | null>(null);
-  const [imageUploadPercent, setImageUploadPercent] = useState<number | null>(null);
-  const [imageUploadStatus, setImageUploadStatus] = useState<string | null>(null);
+  const [pendingImagePreviewUrl, setPendingImagePreviewUrl] = useState<
+    string | null
+  >(null);
+  const [imageUploadPercent, setImageUploadPercent] = useState<number | null>(
+    null,
+  );
+  const [imageUploadStatus, setImageUploadStatus] = useState<string | null>(
+    null,
+  );
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
   const [isImageUploading, setIsImageUploading] = useState(false);
-  const [confirmationModal, setConfirmationModal] = useState<ConfirmationModalState>(null);
+  const [confirmationModal, setConfirmationModal] =
+    useState<ConfirmationModalState>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const uploadResetTimerRef = useRef<number | null>(null);
   const allowCatalogEdits = canManageCatalog(staff?.role);
-  const primaryImage = isValidRemoteImageUrl(form.image.trim()) ? form.image.trim() : "";
+  const primaryImage = isValidRemoteImageUrl(form.image.trim())
+    ? form.image.trim()
+    : "";
   const productGalleryImages = form.images
     .map((image) => image.trim())
     .filter((image) => isValidRemoteImageUrl(image));
   const usesViewImages = form.usesImages
     .map((image) => image.trim())
     .filter((image) => isValidRemoteImageUrl(image));
-  const productPreviewImages = [primaryImage, ...productGalleryImages].filter(Boolean).slice(0, 4);
+  const productPreviewImages = [primaryImage, ...productGalleryImages]
+    .filter(Boolean)
+    .slice(0, 4);
   const usesPreviewImages = usesViewImages.slice(0, 3);
   const isImageModalOpen = imageModalSection !== null;
-  const imageModalTitle = imageModalSection === "product" ? "Product" : "Uses View";
-  const imageModalSlots = imageModalSection ? getImageModalSlots(imageModalSection) : [];
+  const imageModalTitle =
+    imageModalSection === "product" ? "Product" : "Uses View";
+  const imageModalSlots = imageModalSection
+    ? getImageModalSlots(imageModalSection)
+    : [];
   const activeImageSlotIndex =
     selectedImageSlotIndex === null
       ? null
@@ -575,10 +641,14 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
         ? Math.min(selectedImageSlotIndex, imageModalSlots.length - 1)
         : null;
   const activeImageSlot =
-    activeImageSlotIndex === null ? null : imageModalSlots[activeImageSlotIndex] ?? null;
-  const activeImagePreviewUrl = pendingImagePreviewUrl || activeImageSlot?.value || "";
+    activeImageSlotIndex === null
+      ? null
+      : (imageModalSlots[activeImageSlotIndex] ?? null);
+  const activeImagePreviewUrl =
+    pendingImagePreviewUrl || activeImageSlot?.value || "";
   const isDraftUrlValid = isValidRemoteImageUrl(draftImageUrl);
-  const activeImageSlotPosition = activeImageSlotIndex === null ? 0 : activeImageSlotIndex + 1;
+  const activeImageSlotPosition =
+    activeImageSlotIndex === null ? 0 : activeImageSlotIndex + 1;
 
   useEffect(() => {
     return () => {
@@ -597,7 +667,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
       return [
         {
           label: "Primary image",
-          value: isValidRemoteImageUrl(form.image.trim()) ? form.image.trim() : "",
+          value: isValidRemoteImageUrl(form.image.trim())
+            ? form.image.trim()
+            : "",
           index: 0,
         },
         ...form.images.map((image, index) => ({
@@ -615,7 +687,10 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
     }));
   }
 
-  function removeImageModalSlot(section: "product" | "uses", slotIndex: number) {
+  function removeImageModalSlot(
+    section: "product" | "uses",
+    slotIndex: number,
+  ) {
     console.log("[ProductEditorPage] removeImageModalSlot", {
       section,
       slotIndex,
@@ -645,10 +720,15 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
     setForm(nextForm);
     void persistProductImages(nextForm);
 
-    setSelectedImageSlotIndex((current) => Math.max(0, current - (slotIndex <= current ? 1 : 0)));
+    setSelectedImageSlotIndex((current) =>
+      Math.max(0, current - (slotIndex <= current ? 1 : 0)),
+    );
   }
 
-  function selectImageModalSlot(section: "product" | "uses", slotIndex: number) {
+  function selectImageModalSlot(
+    section: "product" | "uses",
+    slotIndex: number,
+  ) {
     console.log("[ProductEditorPage] selectImageModalSlot", {
       section,
       slotIndex,
@@ -657,7 +737,10 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
     });
 
     const slots = getImageModalSlots(section);
-    const nextIndex = Math.max(0, Math.min(slotIndex, Math.max(slots.length - 1, 0)));
+    const nextIndex = Math.max(
+      0,
+      Math.min(slotIndex, Math.max(slots.length - 1, 0)),
+    );
     const nextSlot = slots[nextIndex] ?? null;
 
     if (selectedImageSlotIndex === nextIndex && imageModalSection === section) {
@@ -680,7 +763,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
 
   function getImageUploadPurpose() {
     if (imageModalSection === "product") {
-      return activeImageSlotIndex === 0 ? "product-image" : "product-gallery-image";
+      return activeImageSlotIndex === 0
+        ? "product-image"
+        : "product-gallery-image";
     }
 
     return "product-uses-view-image";
@@ -690,7 +775,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
     return {
       image: nextForm.image.trim(),
       images: nextForm.images.map((image) => image.trim()).filter(Boolean),
-      usesImages: nextForm.usesImages.map((image) => image.trim()).filter(Boolean),
+      usesImages: nextForm.usesImages
+        .map((image) => image.trim())
+        .filter(Boolean),
     };
   }
 
@@ -712,13 +799,12 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
         payload,
       });
 
-      const response = await authorizedRequest<ApiResponse<{ product: AdminProduct }>>(
-        `/admin/products/${productId}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify(payload),
-        },
-      );
+      const response = await authorizedRequest<
+        ApiResponse<{ product: AdminProduct }>
+      >(`/admin/products/${productId}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      });
 
       const nextProduct = response.data.product;
       console.log("[ProductEditorPage] persistProductImages response", {
@@ -731,19 +817,26 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
         ...current,
         image: nextProduct.image?.trim() || nextForm.image.trim() || "",
         images: Array.isArray(nextProduct.images)
-          ? nextProduct.images.map((image) => image.trim()).filter(Boolean).length > 0
+          ? nextProduct.images.map((image) => image.trim()).filter(Boolean)
+              .length > 0
             ? nextProduct.images.map((image) => image.trim()).filter(Boolean)
             : nextForm.images.map((image) => image.trim()).filter(Boolean)
           : nextForm.images.map((image) => image.trim()).filter(Boolean),
         usesImages: Array.isArray(nextProduct.usesImages)
-          ? nextProduct.usesImages.map((image) => image.trim()).filter(Boolean).length > 0
-            ? nextProduct.usesImages.map((image) => image.trim()).filter(Boolean)
+          ? nextProduct.usesImages.map((image) => image.trim()).filter(Boolean)
+              .length > 0
+            ? nextProduct.usesImages
+                .map((image) => image.trim())
+                .filter(Boolean)
             : nextForm.usesImages.map((image) => image.trim()).filter(Boolean)
           : nextForm.usesImages.map((image) => image.trim()).filter(Boolean),
       }));
       setStockAlerts(response.data.product.stockAlerts || []);
     } catch (nextError) {
-      console.error("[ProductEditorPage] persistProductImages failed", nextError);
+      console.error(
+        "[ProductEditorPage] persistProductImages failed",
+        nextError,
+      );
       setImageUploadError(
         nextError instanceof Error
           ? nextError.message
@@ -811,7 +904,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
             : {
                 ...form,
                 images: (() => {
-                  const nextImages = form.images.length ? [...form.images] : [""];
+                  const nextImages = form.images.length
+                    ? [...form.images]
+                    : [""];
                   nextImages[activeImageSlotIndex - 1] = nextUrl;
                   return nextImages;
                 })(),
@@ -819,7 +914,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
           : {
               ...form,
               usesImages: (() => {
-                const nextUsesImages = form.usesImages.length ? [...form.usesImages] : [""];
+                const nextUsesImages = form.usesImages.length
+                  ? [...form.usesImages]
+                  : [""];
                 nextUsesImages[activeImageSlotIndex] = nextUrl;
                 return nextUsesImages;
               })(),
@@ -870,7 +967,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
           entityType: "product",
           entityId: form.id || productId || form.name || "product-draft",
           slotKey: `${imageModalSection}-slot-${
-            activeImageSlotIndex === null ? imageModalSlots.length + 1 : activeImageSlotPosition
+            activeImageSlotIndex === null
+              ? imageModalSlots.length + 1
+              : activeImageSlotPosition
           }`,
           fileName: pendingImageFile.name,
           contentType: pendingImageFile.type || "image/jpeg",
@@ -894,9 +993,11 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
         const xhr = new XMLHttpRequest();
 
         xhr.open(upload.method, upload.signedUrl, true);
-        Object.entries(upload.headers || {}).forEach(([header, headerValue]) => {
-          xhr.setRequestHeader(header, headerValue);
-        });
+        Object.entries(upload.headers || {}).forEach(
+          ([header, headerValue]) => {
+            xhr.setRequestHeader(header, headerValue);
+          },
+        );
 
         xhr.upload.onprogress = (event) => {
           if (!event.lengthComputable) {
@@ -946,7 +1047,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
               : {
                   ...form,
                   images: (() => {
-                    const nextImages = form.images.length ? [...form.images] : [""];
+                    const nextImages = form.images.length
+                      ? [...form.images]
+                      : [""];
                     nextImages[activeImageSlotIndex - 1] = upload.publicUrl;
                     return nextImages;
                   })(),
@@ -954,7 +1057,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
             : {
                 ...form,
                 usesImages: (() => {
-                  const nextUsesImages = form.usesImages.length ? [...form.usesImages] : [""];
+                  const nextUsesImages = form.usesImages.length
+                    ? [...form.usesImages]
+                    : [""];
                   nextUsesImages[activeImageSlotIndex] = upload.publicUrl;
                   return nextUsesImages;
                 })(),
@@ -978,9 +1083,14 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
       setImageUploadStatus(null);
       clearPendingImageFile();
     } catch (nextError) {
-      console.error("[ProductEditorPage] uploadPendingImageFile failed", nextError);
+      console.error(
+        "[ProductEditorPage] uploadPendingImageFile failed",
+        nextError,
+      );
       setImageUploadError(
-        nextError instanceof Error ? nextError.message : "Unable to upload image right now.",
+        nextError instanceof Error
+          ? nextError.message
+          : "Unable to upload image right now.",
       );
     } finally {
       setIsImageUploading(false);
@@ -1019,7 +1129,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
         }
 
         const nextOptions = group.options.map((option, currentOptionIndex) =>
-          currentOptionIndex === optionIndex ? { ...option, ...updates } : option,
+          currentOptionIndex === optionIndex
+            ? { ...option, ...updates }
+            : option,
         );
 
         if (updates.isDefault) {
@@ -1050,7 +1162,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
   function removeOptionGroup(groupIndex: number) {
     setForm((current) => ({
       ...current,
-      optionGroups: current.optionGroups.filter((_, index) => index !== groupIndex),
+      optionGroups: current.optionGroups.filter(
+        (_, index) => index !== groupIndex,
+      ),
     }));
   }
 
@@ -1073,8 +1187,8 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
           return group;
         }
 
-        const nextOptions = group.options.filter((_, currentOptionIndex) =>
-          currentOptionIndex !== optionIndex,
+        const nextOptions = group.options.filter(
+          (_, currentOptionIndex) => currentOptionIndex !== optionIndex,
         );
 
         return {
@@ -1126,7 +1240,10 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
   function addQuantityPricingSlab() {
     setForm((current) => ({
       ...current,
-      quantityPricingSlabs: [...current.quantityPricingSlabs, emptyQuantityPricingSlab()],
+      quantityPricingSlabs: [
+        ...current.quantityPricingSlabs,
+        emptyQuantityPricingSlab(),
+      ],
     }));
   }
 
@@ -1202,10 +1319,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
     setError(null);
 
     try {
-      const response =
-        await authorizedRequest<ApiResponse<{ product: AdminProduct }>>(
-          `/admin/products/${productId}`,
-        );
+      const response = await authorizedRequest<
+        ApiResponse<{ product: AdminProduct }>
+      >(`/admin/products/${productId}`);
       setForm(mapProductToForm(response.data.product));
       setStockAlerts(response.data.product.stockAlerts || []);
     } catch (nextError) {
@@ -1231,10 +1347,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
       setError(null);
 
       try {
-        const response =
-          await authorizedRequest<ApiResponse<{ product: AdminProduct }>>(
-            `/admin/products/${productId}`,
-          );
+        const response = await authorizedRequest<
+          ApiResponse<{ product: AdminProduct }>
+        >(`/admin/products/${productId}`);
 
         if (cancelled) {
           return;
@@ -1271,14 +1386,12 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
     setSuccessMessage(null);
 
     try {
-      const response =
-        await authorizedRequest<ApiResponse<{ product: AdminProduct }>>(
-          productId ? `/admin/products/${productId}` : "/admin/products",
-          {
-            method: productId ? "PATCH" : "POST",
-            body: JSON.stringify(buildPayload(form)),
-          },
-        );
+      const response = await authorizedRequest<
+        ApiResponse<{ product: AdminProduct }>
+      >(productId ? `/admin/products/${productId}` : "/admin/products", {
+        method: productId ? "PATCH" : "POST",
+        body: JSON.stringify(buildPayload(form)),
+      });
 
       setForm(mapProductToForm(response.data.product));
       setStockAlerts(response.data.product.stockAlerts || []);
@@ -1368,7 +1481,6 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
           <h1 className="mt-1 text-[2rem] font-medium tracking-[-0.04em] text-[var(--admin-ink)]">
             {productId ? "Edit Product" : "Create Product"}
           </h1>
-
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -1378,7 +1490,11 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
             tone="primary"
             disabled={saving || !allowCatalogEdits}
           >
-            {saving ? "Saving..." : productId ? "Save Changes" : "Create Product"}
+            {saving
+              ? "Saving..."
+              : productId
+                ? "Save Changes"
+                : "Create Product"}
           </AdminActionButton>
           <Link
             href="/products"
@@ -1403,21 +1519,29 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
 
       {!allowCatalogEdits ? (
         <div className="rounded-[1rem]  bg-gray-100 px-4 py-3 text-sm text-gray-400">
-          Your role can view product metadata, but catalog changes should be completed by
-          catalog, manager, admin, or owner staff.
+          Your role can view product metadata, but catalog changes should be
+          completed by catalog, manager, admin, or owner staff.
         </div>
       ) : null}
 
-      <form id="product-editor-form" className="space-y-6" onSubmit={handleSubmit}>
+      <form
+        id="product-editor-form"
+        className="space-y-6"
+        onSubmit={handleSubmit}
+      >
         <AdminPanel className="overflow-hidden bg-white p-0 shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
           <div className="border-b border-[var(--admin-line)] px-4 py-3 text-center">
-            <p className="text-base font-medium text-gray-800">Product Images</p>
+            <p className="text-base font-medium text-gray-800">
+              Product Images
+            </p>
           </div>
 
           <div className="grid gap-0 lg:grid-cols-2">
             <div className="border-b border-[var(--admin-line)] px-4 py-4 lg:border-b-0 lg:border-r">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-[15px] font-medium text-[var(--admin-ink)]">Product</p>
+                <p className="text-[15px] font-medium text-[var(--admin-ink)]">
+                  Product
+                </p>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
@@ -1447,9 +1571,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                     <div
                       key={`product-preview-${index}`}
                       className={`relative aspect-square overflow-hidden rounded-[0.85rem]${
-                        isSeeMore
-                          ? "bg-gray-100"
-                          : "bg-gray-50"
+                        isSeeMore ? "bg-gray-100" : "bg-gray-50"
                       }`}
                     >
                       {image && !isSeeMore ? (
@@ -1477,7 +1599,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
 
             <div className="px-4 py-4">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-[15px] font-medium text-[var(--admin-ink)]">Uses View</p>
+                <p className="text-[15px] font-medium text-[var(--admin-ink)]">
+                  Uses View
+                </p>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
@@ -1507,9 +1631,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                     <div
                       key={`uses-preview-${index}`}
                       className={`relative aspect-square overflow-hidden rounded-[0.85rem] ${
-                        isSeeMore
-                          ? "bg-gray-100"
-                          : " bg-gray-50"
+                        isSeeMore ? "bg-gray-100" : " bg-gray-50"
                       }`}
                     >
                       {image && !isSeeMore ? (
@@ -1554,7 +1676,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                   type="number"
                   min="0"
                   value={form.stock}
-                  onChange={(event) => setForm({ ...form, stock: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, stock: event.target.value })
+                  }
                   className={inputClassName()}
                   required
                 />
@@ -1579,13 +1703,12 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <FormField
-              label="Internal product id (optional)"
-              hint=""
-            >
+            <FormField label="Internal product id (optional)" hint="">
               <input
                 value={form.id}
-                onChange={(event) => setForm({ ...form, id: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, id: event.target.value })
+                }
                 className={inputClassName()}
                 placeholder="grass-carpet-premium"
               />
@@ -1593,7 +1716,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
             <FormField label="SKU code">
               <input
                 value={form.sku}
-                onChange={(event) => setForm({ ...form, sku: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, sku: event.target.value })
+                }
                 className={inputClassName()}
                 placeholder="SKU-00123"
               />
@@ -1601,7 +1726,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
             <FormField label="HSN code">
               <input
                 value={form.hsnCode}
-                onChange={(event) => setForm({ ...form, hsnCode: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, hsnCode: event.target.value })
+                }
                 className={inputClassName()}
                 placeholder="06029090"
               />
@@ -1609,7 +1736,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
             <FormField label="Name">
               <input
                 value={form.name}
-                onChange={(event) => setForm({ ...form, name: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, name: event.target.value })
+                }
                 className={inputClassName()}
                 placeholder="Premium Green Grass Carpet"
                 required
@@ -1618,7 +1747,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
             <FormField label="Variety">
               <input
                 value={form.variety}
-                onChange={(event) => setForm({ ...form, variety: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, variety: event.target.value })
+                }
                 className={inputClassName()}
                 placeholder="Thai Variegated"
               />
@@ -1626,7 +1757,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
             <FormField label="Category">
               <input
                 value={form.category}
-                onChange={(event) => setForm({ ...form, category: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, category: event.target.value })
+                }
                 className={inputClassName()}
                 placeholder="Grass"
                 required
@@ -1635,7 +1768,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
             <FormField label="Leaf color">
               <input
                 value={form.leafColor}
-                onChange={(event) => setForm({ ...form, leafColor: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, leafColor: event.target.value })
+                }
                 className={inputClassName()}
                 placeholder="Green"
               />
@@ -1643,15 +1778,22 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
             <FormField label="Flower color">
               <input
                 value={form.flowerColor}
-                onChange={(event) => setForm({ ...form, flowerColor: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, flowerColor: event.target.value })
+                }
                 className={inputClassName()}
                 placeholder="White"
               />
             </FormField>
-            <FormField label="Tags (Comma-separated search and merchandising tags.)" hint="">
+            <FormField
+              label="Tags (Comma-separated search and merchandising tags.)"
+              hint=""
+            >
               <input
                 value={form.tags}
-                onChange={(event) => setForm({ ...form, tags: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, tags: event.target.value })
+                }
                 className={inputClassName()}
                 placeholder="garden, outdoor, premium"
               />
@@ -1685,7 +1827,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                   type="number"
                   min="0"
                   value={form.mrp}
-                  onChange={(event) => setForm({ ...form, mrp: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, mrp: event.target.value })
+                  }
                   className={inputClassName()}
                   placeholder="899"
                   required
@@ -1696,7 +1840,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                   type="number"
                   min="0"
                   value={form.price}
-                  onChange={(event) => setForm({ ...form, price: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, price: event.target.value })
+                  }
                   className={inputClassName()}
                   placeholder="699"
                   required
@@ -1705,7 +1851,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
               <FormField label="Offer / discount">
                 <input
                   value={form.offer}
-                  onChange={(event) => setForm({ ...form, offer: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, offer: event.target.value })
+                  }
                   className={inputClassName()}
                   placeholder="Flat 20% off"
                 />
@@ -1725,7 +1873,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
               <FormField label="Height">
                 <input
                   value={form.height}
-                  onChange={(event) => setForm({ ...form, height: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, height: event.target.value })
+                  }
                   className={inputClassName()}
                   placeholder="2 ft Height"
                 />
@@ -1735,12 +1885,14 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                   type="number"
                   min="0"
                   value={form.weight}
-                  onChange={(event) => setForm({ ...form, weight: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, weight: event.target.value })
+                  }
                   className={inputClassName()}
                   placeholder="10"
-                required
-              />
-            </FormField>
+                  required
+                />
+              </FormField>
               <FormField label="Plant age (months)">
                 <input
                   type="number"
@@ -1768,7 +1920,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
               <FormField label="Pack label">
                 <input
                   value={form.packLabel}
-                  onChange={(event) => setForm({ ...form, packLabel: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, packLabel: event.target.value })
+                  }
                   className={inputClassName()}
                   placeholder="Per roll"
                   required
@@ -1777,7 +1931,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
               <FormField label="Unit label">
                 <input
                   value={form.unit}
-                  onChange={(event) => setForm({ ...form, unit: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, unit: event.target.value })
+                  }
                   className={inputClassName()}
                   placeholder="sqft"
                   required
@@ -1786,7 +1942,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
               <FormField label="Badge">
                 <input
                   value={form.badge}
-                  onChange={(event) => setForm({ ...form, badge: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, badge: event.target.value })
+                  }
                   className={inputClassName()}
                   placeholder="Best Seller"
                   required
@@ -1802,7 +1960,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                   }
                   className={inputClassName()}
                   required
-                  />
+                />
               </FormField>
               <FormField label="Container size">
                 <input
@@ -1817,11 +1975,11 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
             </div>
           </AdminPanel>
 
-        <AdminPanel className=" bg-white p-5 shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
-          <div className="border-b border-[var(--admin-line)] pb-4">
-            <p className="text-sm font-medium text-gray-500">Plant care</p>
-            <h2 className="mt-1 text-xl font-medium tracking-[-0.03em] text-[var(--admin-ink)]">
-              Growing Details
+          <AdminPanel className=" bg-white p-5 shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
+            <div className="border-b border-[var(--admin-line)] pb-4">
+              <p className="text-sm font-medium text-gray-500">Plant care</p>
+              <h2 className="mt-1 text-xl font-medium tracking-[-0.03em] text-[var(--admin-ink)]">
+                Growing Details
               </h2>
             </div>
 
@@ -1872,7 +2030,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
               <FormField label="Usage area">
                 <input
                   value={form.usageArea}
-                  onChange={(event) => setForm({ ...form, usageArea: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, usageArea: event.target.value })
+                  }
                   className={inputClassName()}
                   placeholder="Garden, terrace, balcony"
                 />
@@ -2001,9 +2161,7 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
         <AdminPanel className=" bg-white p-5 shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
           <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--admin-line)] pb-4">
             <div>
-              <p className="text-sm font-medium text-gray-500">
-                Bulk pricing
-              </p>
+              <p className="text-sm font-medium text-gray-500">Bulk pricing</p>
               <h2 className="mt-1 text-xl font-medium tracking-[-0.03em] text-[var(--admin-ink)]">
                 Quantity Slabs
               </h2>
@@ -2116,7 +2274,8 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
             </div>
           ) : (
             <div className="mt-5 rounded-[1rem] border border-dashed border-[var(--admin-line)] px-4 py-8 text-center text-sm text-gray-500">
-              No quantity slabs yet. Add ranges like 1-500, 501-1000, or 1001+ to power bulk pricing.
+              No quantity slabs yet. Add ranges like 1-500, 501-1000, or 1001+
+              to power bulk pricing.
             </div>
           )}
         </AdminPanel>
@@ -2181,12 +2340,12 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                   </div>
 
                   <div className="mt-4 flex justify-end">
-                          <AdminActionButton
-                            type="button"
-                            tone="danger"
-                            onClick={() => requestDetailSectionRemoval(sectionIndex)}
-                            disabled={!allowCatalogEdits}
-                          >
+                    <AdminActionButton
+                      type="button"
+                      tone="danger"
+                      onClick={() => requestDetailSectionRemoval(sectionIndex)}
+                      disabled={!allowCatalogEdits}
+                    >
                       Remove section
                     </AdminActionButton>
                   </div>
@@ -2223,8 +2382,8 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-gray-500">
-              Add dynamic size or coverage choices like `12 inch`, `30 cm`, `3 gallon`, or
-              `100 sq ft`.
+              Add dynamic size or coverage choices like `12 inch`, `30 cm`, `3
+              gallon`, or `100 sq ft`.
             </p>
             <AdminActionButton
               type="button"
@@ -2248,7 +2407,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                       <input
                         value={group.title}
                         onChange={(event) =>
-                          updateOptionGroup(groupIndex, { title: event.target.value })
+                          updateOptionGroup(groupIndex, {
+                            title: event.target.value,
+                          })
                         }
                         className={inputClassName()}
                         placeholder="Select Coverage"
@@ -2258,7 +2419,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                       <input
                         value={group.key}
                         onChange={(event) =>
-                          updateOptionGroup(groupIndex, { key: event.target.value })
+                          updateOptionGroup(groupIndex, {
+                            key: event.target.value,
+                          })
                         }
                         className={inputClassName()}
                         placeholder="coverage"
@@ -2268,7 +2431,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                       <input
                         value={group.subtitle}
                         onChange={(event) =>
-                          updateOptionGroup(groupIndex, { subtitle: event.target.value })
+                          updateOptionGroup(groupIndex, {
+                            subtitle: event.target.value,
+                          })
                         }
                         className={inputClassName()}
                         placeholder="Choose the option that fits your space best"
@@ -2278,7 +2443,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                       <input
                         value={group.guideLabel}
                         onChange={(event) =>
-                          updateOptionGroup(groupIndex, { guideLabel: event.target.value })
+                          updateOptionGroup(groupIndex, {
+                            guideLabel: event.target.value,
+                          })
                         }
                         className={inputClassName()}
                         placeholder="Coverage guide"
@@ -2458,13 +2625,15 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
 
                         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                           <p className="text-xs text-gray-500">
-                            Leave label empty if you want the storefront to generate it from
-                            value + unit.
+                            Leave label empty if you want the storefront to
+                            generate it from value + unit.
                           </p>
                           <AdminActionButton
                             type="button"
                             tone="danger"
-                            onClick={() => removeOption(groupIndex, optionIndex)}
+                            onClick={() =>
+                              removeOption(groupIndex, optionIndex)
+                            }
                             disabled={!allowCatalogEdits}
                           >
                             Remove option
@@ -2512,8 +2681,8 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-gray-500">
-              Customers who asked to be notified when this out-of-stock product becomes
-              available again.
+              Customers who asked to be notified when this out-of-stock product
+              becomes available again.
             </p>
             <span className="inline-flex min-w-[3rem] items-center justify-center rounded-full bg-[var(--admin-chip)] px-3 py-1 text-sm font-semibold text-[var(--admin-ink)]">
               {stockAlerts.length}
@@ -2544,9 +2713,13 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                     <div className="text-right text-xs text-gray-500">
                       <p>
                         Requested{" "}
-                        {alert.createdAt ? new Date(alert.createdAt).toLocaleString() : "recently"}
+                        {alert.createdAt
+                          ? new Date(alert.createdAt).toLocaleString()
+                          : "recently"}
                       </p>
-                      {alert.customer?.city ? <p className="mt-1">{alert.customer.city}</p> : null}
+                      {alert.customer?.city ? (
+                        <p className="mt-1">{alert.customer.city}</p>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -2554,7 +2727,8 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
             </div>
           ) : (
             <p className="mt-5 text-sm text-gray-500">
-              No customers have requested a stock notification for this product yet.
+              No customers have requested a stock notification for this product
+              yet.
             </p>
           )}
         </AdminPanel>
@@ -2613,7 +2787,11 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                     onClick={() => void confirmDestructiveAction()}
                     disabled={deleting}
                   >
-                    {confirmationModal.kind === "detail" ? "Remove" : deleting ? "Deleting..." : "Delete"}
+                    {confirmationModal.kind === "detail"
+                      ? "Remove"
+                      : deleting
+                        ? "Deleting..."
+                        : "Delete"}
                   </AdminActionButton>
                 </div>
               </div>
@@ -2638,9 +2816,10 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                     <p className="text-xs font-medium uppercase tracking-[0.14em] text-gray-500">
                       {imageModalTitle} Images
                     </p>
-                
+
                     <p className="mt-1 text-sm text-gray-500">
-                      Replace, remove, or upload a new image for the selected slot.
+                      Replace, remove, or upload a new image for the selected
+                      slot.
                     </p>
                   </div>
 
@@ -2659,8 +2838,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                     <div className="rounded-[1.35rem] border border-[var(--admin-line)] bg-[#fbfcf8] p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div>
-                          <p className="text-sm font-medium text-[var(--admin-ink)]">Gallery</p>
-                   
+                          <p className="text-sm font-medium text-[var(--admin-ink)]">
+                            Gallery
+                          </p>
                         </div>
                         <span className="inline-flex min-w-[3rem] items-center justify-center rounded-full bg-[var(--admin-chip)] px-3 py-1 text-xs font-medium text-[var(--admin-ink)]">
                           {imageModalSlots.length} items
@@ -2669,7 +2849,8 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
 
                       <div className="mt-4 space-y-3">
                         {imageModalSlots.map((slot) => {
-                          const isSelected = slot.index === activeImageSlotIndex;
+                          const isSelected =
+                            slot.index === activeImageSlotIndex;
 
                           return (
                             <div
@@ -2683,7 +2864,10 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                               <button
                                 type="button"
                                 onClick={() =>
-                                  selectImageModalSlot(imageModalSection || "product", slot.index)
+                                  selectImageModalSlot(
+                                    imageModalSection || "product",
+                                    slot.index,
+                                  )
                                 }
                                 className="shrink-0"
                                 aria-label={`Select ${slot.label}`}
@@ -2718,7 +2902,10 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    selectImageModalSlot(imageModalSection || "product", slot.index)
+                                    selectImageModalSlot(
+                                      imageModalSection || "product",
+                                      slot.index,
+                                    )
                                   }
                                   className="text-xs font-medium text-[var(--admin-ink)] transition hover:text-[var(--admin-accent)]"
                                 >
@@ -2727,7 +2914,10 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    removeImageModalSlot(imageModalSection || "product", slot.index)
+                                    removeImageModalSlot(
+                                      imageModalSection || "product",
+                                      slot.index,
+                                    )
                                   }
                                   disabled={!allowCatalogEdits}
                                   className="text-xs font-medium text-[#d13c2f] transition hover:text-[#a72f25] disabled:cursor-not-allowed disabled:opacity-60"
@@ -2739,7 +2929,6 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                           );
                         })}
                       </div>
-
                     </div>
 
                     <div className="rounded-[1.35rem] border border-dashed border-[var(--admin-line-strong)] bg-white p-4">
@@ -2749,12 +2938,15 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                             Upload Image
                           </p>
                           <p className="mt-1 text-xs text-gray-500">
-                            {activeImageSlot?.label || "Select a slot to replace it."}
+                            {activeImageSlot?.label ||
+                              "Select a slot to replace it."}
                           </p>
                         </div>
                         <span className="inline-flex items-center rounded-full bg-[var(--admin-chip)] px-3 py-1 text-xs font-medium text-[var(--admin-ink)]">
-                          {activeImageSlotIndex === null ? "0" : activeImageSlotPosition} /{" "}
-                          {Math.max(imageModalSlots.length, 1)}
+                          {activeImageSlotIndex === null
+                            ? "0"
+                            : activeImageSlotPosition}{" "}
+                          / {Math.max(imageModalSlots.length, 1)}
                         </span>
                       </div>
 
@@ -2787,7 +2979,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                             ) : (
                               <div className="flex flex-col items-center gap-2 text-center text-gray-500">
                                 <ImagePlus size={30} />
-                                <span className="text-sm font-medium">Upload image</span>
+                                <span className="text-sm font-medium">
+                                  Upload image
+                                </span>
                               </div>
                             )}
                           </button>
@@ -2846,7 +3040,9 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                                     type="button"
                                     tone="secondary"
                                     onClick={applyImageUrl}
-                                    disabled={!allowCatalogEdits || !isDraftUrlValid}
+                                    disabled={
+                                      !allowCatalogEdits || !isDraftUrlValid
+                                    }
                                     className="shrink-0"
                                   >
                                     Add
@@ -2889,7 +3085,8 @@ export default function ProductEditorPage({ productId }: ProductEditorPageProps)
                       </div>
 
                       <p className="mt-3 text-xs leading-5 text-gray-500">
-                        Choose a local file to upload it, or paste a valid URL and click Add.
+                        Choose a local file to upload it, or paste a valid URL
+                        and click Add.
                       </p>
                     </div>
                   </div>
