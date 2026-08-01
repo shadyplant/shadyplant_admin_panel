@@ -235,6 +235,29 @@ export type AdminShippingRule = {
   updatedAt?: string;
 };
 
+export type AdminShippingZonePoint = {
+  lat: number;
+  lng: number;
+};
+
+export type AdminShippingZone = {
+  id: string;
+  organizationId?: string;
+  name: string;
+  zoneType: "service" | "restriction";
+  description: string;
+  notes: string;
+  isActive: boolean;
+  fillColor: string;
+  strokeColor: string;
+  opacity: number;
+  polygon: AdminShippingZonePoint[];
+  path?: AdminShippingZonePoint[];
+  pointCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type AdminDeliveryChargeProfile = {
   id: string;
   code: string;

@@ -721,12 +721,16 @@ export default function ProductsPage() {
     rows: SpreadsheetRow[],
     fileName: string,
   ): SpreadsheetImportPreview {
-    const actions = rows.map((row, index) => {
+    const actions: SpreadsheetImportAction[] = rows.map((row, index) => {
       const match = findProductMatchForSpreadsheetRow(products, row);
       return {
         rowNumber: index + 2,
-        action: match ? "update" : "create",
-        matchedBy: match?.matchedBy || "new",
+        action: (match ? "update" : "create") as "update" | "create",
+        matchedBy: (match?.matchedBy || "new") as
+          | "id"
+          | "productId"
+          | "sku"
+          | "new",
         existingProductId: match?.product.id || "",
         existingProductName: match?.product.name || "",
         row,

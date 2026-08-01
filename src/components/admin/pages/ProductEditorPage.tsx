@@ -720,9 +720,10 @@ export default function ProductEditorPage({
     setForm(nextForm);
     void persistProductImages(nextForm);
 
-    setSelectedImageSlotIndex((current) =>
-      Math.max(0, current - (slotIndex <= current ? 1 : 0)),
-    );
+    setSelectedImageSlotIndex((current) => {
+      const currentIndex = current ?? 0;
+      return Math.max(0, currentIndex - (slotIndex <= currentIndex ? 1 : 0));
+    });
   }
 
   function selectImageModalSlot(
