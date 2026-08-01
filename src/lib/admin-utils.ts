@@ -146,6 +146,10 @@ export function getStatusTone(status: string | null | undefined) {
     return "bg-[#fff2de] text-[#9c5d1e]";
   }
 
+   if (["placed"].includes(normalizedStatus)) {
+    return "bg-[#ff800030] text-[#331c05]";
+  }
+
   if (
     [
       "rejected",

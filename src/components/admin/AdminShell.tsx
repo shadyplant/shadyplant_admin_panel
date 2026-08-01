@@ -677,14 +677,14 @@ export default function AdminShell({
 
       {isLogoutConfirmOpen ? (
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-[rgba(15,24,12,0.16)] px-4">
-          <div className="w-full max-w-sm rounded-[1rem] border border-[#efc7c1] bg-white p-5 shadow-[0_20px_50px_rgba(20,30,18,0.16)]">
+          <div className="w-full max-w-sm rounded-md bg-white p-5 shadow-[0_20px_50px_rgba(20,30,18,0.16)]">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b24336]">
               Confirm logout
             </p>
-            <h2 className="mt-2 text-lg font-bold text-[var(--admin-ink)]">
+            <h2 className="mt-2 text-lg font-bold text-gray-800">
               Are you sure to log out?
             </h2>
-            <p className="mt-2 text-sm text-[var(--admin-muted)]">
+            <p className="mt-2 text-sm text-gray-700">
               You will need to sign in again to access the admin workspace.
             </p>
 
@@ -692,7 +692,7 @@ export default function AdminShell({
               <button
                 type="button"
                 onClick={() => setIsLogoutConfirmOpen(false)}
-                className="rounded-full border border-[var(--admin-line)] px-4 py-2 text-sm font-semibold text-[var(--admin-ink)] transition hover:bg-[var(--admin-chip)]"
+                className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-200 cursor-pointer"
               >
                 Cancel
               </button>
@@ -703,7 +703,7 @@ export default function AdminShell({
                   logout();
                   router.replace("/login");
                 }}
-                className="rounded-full bg-[#b24336] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#9b362b]"
+                className="rounded-full bg-[#b24336] cursor-pointer px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#9b362b]"
               >
                 Log out
               </button>

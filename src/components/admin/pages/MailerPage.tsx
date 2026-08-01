@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Sparkles, Undo2, X } from "lucide-react";
+import { Bell, Mail, Sparkles, Undo2, X } from "lucide-react";
 import { useAdminAuth } from "@/components/admin/AdminAuthProvider";
 import {
   AdminEmptyCard,
@@ -22,6 +22,7 @@ import type { AdminCustomer, ApiResponse } from "@/lib/admin-api";
 import { canViewMailer } from "@/lib/admin-permissions";
 
 type MailMode = "html" | "text";
+type DeliveryMode = "email" | "push";
 
 type MailerFormState = {
   subject: string;
@@ -29,6 +30,17 @@ type MailerFormState = {
   contentMode: MailMode;
   htmlBody: string;
   textBody: string;
+};
+
+type PushFormState = {
+  title: string;
+  description: string;
+  link: string;
+  buttonLabel: string;
+  buttonColor: string;
+  logoUrl: string;
+  imageUrl: string;
+  vibrate: boolean;
 };
 
 type AiDraftSnapshot = {
@@ -42,6 +54,17 @@ const emptyForm: MailerFormState = {
   contentMode: "html",
   htmlBody: "<p>Hi there,</p><p></p><p>Thanks for being with us.</p>",
   textBody: "Hi there,\n\nThanks for being with us.",
+};
+
+const emptyPushForm: PushFormState = {
+  title: "",
+  description: "",
+  link: "",
+  buttonLabel: "Open",
+  buttonColor: "#207958",
+  logoUrl: "",
+  imageUrl: "",
+  vibrate: true,
 };
 
 function normalizeRecipients(value: string) {
@@ -61,6 +84,8 @@ export default function MailerPage() {
   const { authorizedRequest, staff } = useAdminAuth();
   const [customers, setCustomers] = useState<AdminCustomer[]>([]);
   const [form, setForm] = useState<MailerFormState>(emptyForm);
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("email");
+  const [pushForm, setPushForm] = useState<PushFormState>(emptyPushForm);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiPromptMode, setAiPromptMode] = useState<MailMode>("html");
   const [aiPromptOpen, setAiPromptOpen] = useState(false);
@@ -172,8 +197,11 @@ export default function MailerPage() {
     [manualRecipients, selectedCustomerEmails],
   );
 
-  const previewContent =
-    form.contentMode === "html"
+  const isPushMode = deliveryMode === "push";
+
+  const previewContent = isPushMode
+    ? ""
+    : form.contentMode === "html"
       ? form.htmlBody.trim() || "<p>No HTML content yet.</p>"
       : form.textBody.trim() || "No text content yet.";
 
@@ -302,43 +330,87 @@ export default function MailerPage() {
     }
 
     try {
-      const payload =
-        form.contentMode === "html"
-          ? {
-              recipients,
-              subject: form.subject.trim(),
-              html: form.htmlBody.trim(),
-              source: "admin-mailer",
-            }
-          : {
-              recipients,
-              subject: form.subject.trim(),
-              text: form.textBody.trim(),
-              source: "admin-mailer",
-            };
+      if (isPushMode) {
+        const normalizedPushTitle = pushForm.title.trim();
+        const normalizedPushDescription = pushForm.description.trim();
 
-      const response = await authorizedRequest<
-        ApiResponse<{ result: { delivered?: boolean; skipped?: boolean; transport?: string } }>
-      >("/admin/mailer/send", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+        if (!normalizedPushTitle) {
+          setError("Add a push title.");
+          setSending(false);
+          return;
+        }
 
-      setSuccessMessage(
-        response.data.result?.skipped
-          ? `Mailer is set to ${response.data.result.transport || "disabled"} so the request was skipped safely.`
-          : `Email processed successfully with ${response.data.result?.transport || "native mailer"}.`,
-      );
-      setForm({
-        ...emptyForm,
-        contentMode: form.contentMode,
-      });
+        if (!normalizedPushDescription) {
+          setError("Add a push description.");
+          setSending(false);
+          return;
+        }
+
+        const response = await authorizedRequest<
+          ApiResponse<{ result: { delivered?: boolean; skipped?: boolean; successCount?: number; failureCount?: number; tokenCount?: number; reason?: string } }>
+        >("/admin/notifications/push/send", {
+          method: "POST",
+          body: JSON.stringify({
+            recipients,
+            title: normalizedPushTitle,
+            description: normalizedPushDescription,
+            link: pushForm.link.trim(),
+            buttonLabel: pushForm.buttonLabel.trim() || "Open",
+            buttonColor: pushForm.buttonColor.trim() || "#207958",
+            logoUrl: pushForm.logoUrl.trim(),
+            imageUrl: pushForm.imageUrl.trim(),
+            vibrate: pushForm.vibrate,
+            source: "admin-push",
+          }),
+        });
+
+        setSuccessMessage(
+          response.data.result?.skipped
+            ? `Push request skipped safely because ${response.data.result.reason || "no active tokens were found"}.`
+            : `Push processed successfully for ${response.data.result?.successCount || 0} device notifications.`,
+        );
+        setPushForm(emptyPushForm);
+      } else {
+        const payload =
+          form.contentMode === "html"
+            ? {
+                recipients,
+                subject: form.subject.trim(),
+                html: form.htmlBody.trim(),
+                source: "admin-mailer",
+              }
+            : {
+                recipients,
+                subject: form.subject.trim(),
+                text: form.textBody.trim(),
+                source: "admin-mailer",
+              };
+
+        const response = await authorizedRequest<
+          ApiResponse<{ result: { delivered?: boolean; skipped?: boolean; transport?: string } }>
+        >("/admin/mailer/send", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+
+        setSuccessMessage(
+          response.data.result?.skipped
+            ? `Mailer is set to ${response.data.result.transport || "disabled"} so the request was skipped safely.`
+            : `Email processed successfully with ${response.data.result?.transport || "native mailer"}.`,
+        );
+        setForm({
+          ...emptyForm,
+          contentMode: form.contentMode,
+        });
+      }
       setSelectedCustomerIds([]);
     } catch (nextError) {
       setError(
         nextError instanceof Error
           ? nextError.message
-          : "Unable to send email right now.",
+          : isPushMode
+            ? "Unable to send push notification right now."
+            : "Unable to send email right now.",
       );
     } finally {
       setSending(false);
@@ -390,7 +462,7 @@ export default function MailerPage() {
       <AdminPageHeader
         eyebrow="Notifications"
         title="Mailer"
-        description="Send a polished one-off email to any address or to selected customers, with either raw HTML or plain text."
+        description="Send a polished email or push notification to any address or selected customers from one place."
       />
 
 
@@ -542,7 +614,7 @@ export default function MailerPage() {
           </AdminPanel>
 
             <AdminPanel className="space-y-5 border border-gray-100">
-              <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-4">
+              <div className="flex flex-col gap-4 border-b border-gray-100 pb-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
                     Compose
@@ -551,144 +623,325 @@ export default function MailerPage() {
                     Create message
                   </h2>
                 </div>
-                <AdminPill>{form.contentMode === "html" ? "HTML" : "Text"}</AdminPill>
+
+                <div className="flex items-center gap-2 rounded-full bg-gray-100 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setDeliveryMode("email")}
+                    className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      deliveryMode === "email"
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-500 hover:text-gray-800"
+                    }`}
+                  >
+                    <Mail className="h-4 w-4" />
+                    Email
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeliveryMode("push")}
+                    className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      deliveryMode === "push"
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-500 hover:text-gray-800"
+                    }`}
+                  >
+                    <Bell className="h-4 w-4" />
+                    Push
+                  </button>
+                </div>
               </div>
 
-              <div className="mt-5 grid gap-5 md:grid-cols-2">
-                <label className="block md:col-span-2">
-                  <span className="text-sm font-semibold text-gray-800">
-                    Subject
-                  </span>
-                  <div className="mt-2">
-                    <AdminTextInput
-                      value={form.subject}
+              {isPushMode ? (
+                <div className="mt-5 grid gap-5 md:grid-cols-2">
+                  <label className="block md:col-span-2">
+                    <span className="text-sm font-semibold text-gray-800">
+                      Title
+                    </span>
+                    <div className="mt-2">
+                      <AdminTextInput
+                        value={pushForm.title}
+                        onChange={(event) =>
+                          setPushForm((currentForm) => ({
+                            ...currentForm,
+                            title: event.target.value,
+                          }))
+                        }
+                        placeholder="Fresh stock just landed"
+                        required
+                      />
+                    </div>
+                  </label>
+
+                  <label className="block md:col-span-2">
+                    <span className="text-sm font-semibold text-gray-800">
+                      Description
+                    </span>
+                    <div className="mt-2">
+                      <AdminTextarea
+                        value={pushForm.description}
+                        onChange={(event) =>
+                          setPushForm((currentForm) => ({
+                            ...currentForm,
+                            description: event.target.value,
+                          }))
+                        }
+                        placeholder="Your favorite plants are back in stock."
+                        className="min-h-[160px]"
+                        required
+                      />
+                    </div>
+                  </label>
+
+                  <label className="block md:col-span-2">
+                    <span className="text-sm font-semibold text-gray-800">
+                      Link
+                    </span>
+                    <div className="mt-2">
+                      <AdminTextInput
+                        value={pushForm.link}
+                        onChange={(event) =>
+                          setPushForm((currentForm) => ({
+                            ...currentForm,
+                            link: event.target.value,
+                          }))
+                        }
+                        placeholder="https://shadyplant.com/products/restock"
+                      />
+                    </div>
+                  </label>
+
+                  <label className="block">
+                    <span className="text-sm font-semibold text-gray-800">
+                      Button label
+                    </span>
+                    <div className="mt-2">
+                      <AdminTextInput
+                        value={pushForm.buttonLabel}
+                        onChange={(event) =>
+                          setPushForm((currentForm) => ({
+                            ...currentForm,
+                            buttonLabel: event.target.value,
+                          }))
+                        }
+                        placeholder="View now"
+                      />
+                    </div>
+                  </label>
+
+                  <label className="block">
+                    <span className="text-sm font-semibold text-gray-800">
+                      Button color
+                    </span>
+                    <div className="mt-2">
+                      <AdminTextInput
+                        value={pushForm.buttonColor}
+                        onChange={(event) =>
+                          setPushForm((currentForm) => ({
+                            ...currentForm,
+                            buttonColor: event.target.value,
+                          }))
+                        }
+                        placeholder="#207958"
+                      />
+                    </div>
+                  </label>
+
+                  <label className="block md:col-span-2">
+                    <span className="text-sm font-semibold text-gray-800">
+                      Logo URL
+                    </span>
+                    <div className="mt-2">
+                      <AdminTextInput
+                        value={pushForm.logoUrl}
+                        onChange={(event) =>
+                          setPushForm((currentForm) => ({
+                            ...currentForm,
+                            logoUrl: event.target.value,
+                          }))
+                        }
+                        placeholder="https://cdn.shadyplant.com/logo.png"
+                      />
+                    </div>
+                  </label>
+
+                  <label className="block md:col-span-2">
+                    <span className="text-sm font-semibold text-gray-800">
+                      Product or banner image URL
+                    </span>
+                    <div className="mt-2">
+                      <AdminTextInput
+                        value={pushForm.imageUrl}
+                        onChange={(event) =>
+                          setPushForm((currentForm) => ({
+                            ...currentForm,
+                            imageUrl: event.target.value,
+                          }))
+                        }
+                        placeholder="https://cdn.shadyplant.com/product-banner.jpg"
+                      />
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 md:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={pushForm.vibrate}
                       onChange={(event) =>
-                        setForm((currentForm) => ({
+                        setPushForm((currentForm) => ({
                           ...currentForm,
-                          subject: event.target.value,
+                          vibrate: event.target.checked,
                         }))
                       }
-                      placeholder="Spring restock update"
-                      required
+                      className="mt-1 h-4 w-4 rounded border-gray-300 text-gray-700 focus:ring-gray-300"
                     />
-                  </div>
-                </label>
-
-                <label className="block">
-                  <span className="text-sm font-semibold text-gray-800">
-                    Message type
-                  </span>
-                  <div className="mt-2">
-                    <AdminSelect
-                      value={form.contentMode}
-                      onChange={(event) =>
-                        setForm((currentForm) => ({
-                          ...currentForm,
-                          contentMode: event.target.value as MailMode,
-                        }))
-                      }
-                    >
-                      <option value="html">HTML</option>
-                      <option value="text">Plain text</option>
-                    </AdminSelect>
-                  </div>
-                </label>
-
-                <label className="block">
-                  <span className="text-sm font-semibold text-gray-800">
-                    Template tone
-                  </span>
-                  <div className="mt-2 rounded-xl border border-gray-100 bg-gray-100 px-4 py-3 text-sm text-gray-500">
-                    Keep the copy short and direct. HTML mode supports full markup, while text mode is ideal for quick operational messages.
-                  </div>
-                </label>
-
-                {form.contentMode === "html" ? (
-                  <label className="block md:col-span-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-semibold text-gray-800">
-                        HTML body
-                      </span>
-                      <div className="flex items-center gap-2">
-                        {bodyHistory.length ? (
-                          <button
-                            type="button"
-                            onClick={undoLastAiDraft}
-                            className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-800 transition hover:bg-gray-100"
-                          >
-                            <Undo2 className="h-3.5 w-3.5" />
-                            Undo
-                          </button>
-                        ) : null}
-                        <button
-                          type="button"
-                          onClick={() => openAiPrompt("html")}
-                          className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-200"
-                        >
-                          <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-                          AI
-                        </button>
-                      </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">
+                        Vibrate
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-gray-500">
+                        Turn this on for high-priority device alerts.
+                      </p>
                     </div>
+                  </label>
+                </div>
+              ) : (
+                <div className="mt-5 grid gap-5 md:grid-cols-2">
+                  <label className="block md:col-span-2">
+                    <span className="text-sm font-semibold text-gray-800">
+                      Subject
+                    </span>
                     <div className="mt-2">
-                      <AdminTextarea
-                        value={form.htmlBody}
+                      <AdminTextInput
+                        value={form.subject}
                         onChange={(event) =>
                           setForm((currentForm) => ({
                             ...currentForm,
-                            htmlBody: event.target.value,
+                            subject: event.target.value,
                           }))
                         }
-                        placeholder="<p>Hello customer,</p>"
-                        className="min-h-[240px] font-mono text-[13px]"
+                        placeholder="Spring restock update"
                         required
                       />
                     </div>
                   </label>
-                ) : (
-                  <label className="block md:col-span-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-semibold text-gray-800">
-                        Text body
-                      </span>
-                      <div className="flex items-center gap-2">
-                        {bodyHistory.length ? (
-                          <button
-                            type="button"
-                            onClick={undoLastAiDraft}
-                            className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-800 transition hover:bg-gray-100"
-                          >
-                            <Undo2 className="h-3.5 w-3.5" />
-                            Undo
-                          </button>
-                        ) : null}
-                        <button
-                          type="button"
-                          onClick={() => openAiPrompt("text")}
-                          className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-200"
-                        >
-                          <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-                          AI
-                        </button>
-                      </div>
-                    </div>
+
+                  <label className="block">
+                    <span className="text-sm font-semibold text-gray-800">
+                      Message type
+                    </span>
                     <div className="mt-2">
-                      <AdminTextarea
-                        value={form.textBody}
+                      <AdminSelect
+                        value={form.contentMode}
                         onChange={(event) =>
                           setForm((currentForm) => ({
                             ...currentForm,
-                            textBody: event.target.value,
+                            contentMode: event.target.value as MailMode,
                           }))
                         }
-                        placeholder="Hello customer,"
-                        className="min-h-[240px]"
-                        required
-                      />
+                      >
+                        <option value="html">HTML</option>
+                        <option value="text">Plain text</option>
+                      </AdminSelect>
                     </div>
                   </label>
-                )}
-              </div>
+
+                  <label className="block">
+                    <span className="text-sm font-semibold text-gray-800">
+                      Template tone
+                    </span>
+                    <div className="mt-2 rounded-xl border border-gray-100 bg-gray-100 px-4 py-3 text-sm text-gray-500">
+                      Keep the copy short and direct. HTML mode supports full markup, while text mode is ideal for quick operational messages.
+                    </div>
+                  </label>
+
+                  {form.contentMode === "html" ? (
+                    <label className="block md:col-span-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-semibold text-gray-800">
+                          HTML body
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {bodyHistory.length ? (
+                            <button
+                              type="button"
+                              onClick={undoLastAiDraft}
+                              className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-800 transition hover:bg-gray-100"
+                            >
+                              <Undo2 className="h-3.5 w-3.5" />
+                              Undo
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => openAiPrompt("html")}
+                            className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-200"
+                          >
+                            <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+                            AI
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        <AdminTextarea
+                          value={form.htmlBody}
+                          onChange={(event) =>
+                            setForm((currentForm) => ({
+                              ...currentForm,
+                              htmlBody: event.target.value,
+                            }))
+                          }
+                          placeholder="<p>Hello customer,</p>"
+                          className="min-h-[240px] font-mono text-[13px]"
+                          required
+                        />
+                      </div>
+                    </label>
+                  ) : (
+                    <label className="block md:col-span-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-semibold text-gray-800">
+                          Text body
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {bodyHistory.length ? (
+                            <button
+                              type="button"
+                              onClick={undoLastAiDraft}
+                              className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-800 transition hover:bg-gray-100"
+                            >
+                              <Undo2 className="h-3.5 w-3.5" />
+                              Undo
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => openAiPrompt("text")}
+                            className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-200"
+                          >
+                            <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+                            AI
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        <AdminTextarea
+                          value={form.textBody}
+                          onChange={(event) =>
+                            setForm((currentForm) => ({
+                              ...currentForm,
+                              textBody: event.target.value,
+                            }))
+                          }
+                          placeholder="Hello customer,"
+                          className="min-h-[240px]"
+                          required
+                        />
+                      </div>
+                    </label>
+                  )}
+                </div>
+              )}
 
               <div className="mt-6 flex items-center justify-end">
                 <AdminActionButton
@@ -696,7 +949,11 @@ export default function MailerPage() {
                   disabled={sending}
                   className="min-w-[180px] !bg-gray-800 px-6 py-3 !text-white hover:!bg-gray-700"
                 >
-                  {sending ? "Sending..." : "Send email"}
+                  {sending
+                    ? "Sending..."
+                    : isPushMode
+                      ? "Send push"
+                      : "Send email"}
                 </AdminActionButton>
               </div>
             </AdminPanel>
@@ -715,10 +972,19 @@ export default function MailerPage() {
             </div>
 
             <MobileEmailPreview
+              deliveryMode={deliveryMode}
               subject={form.subject}
               senderName="ShadyPlant"
               previewContent={previewContent}
               contentMode={form.contentMode}
+              title={pushForm.title}
+              description={pushForm.description}
+              link={pushForm.link}
+              buttonLabel={pushForm.buttonLabel}
+              buttonColor={pushForm.buttonColor}
+              logoUrl={pushForm.logoUrl}
+              imageUrl={pushForm.imageUrl}
+              vibrate={pushForm.vibrate}
             />
           </AdminPanel>
         </div>

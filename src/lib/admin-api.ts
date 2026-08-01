@@ -741,6 +741,11 @@ export type ApiResponse<T> = {
 
 const DEFAULT_ADMIN_API_BASE_URL = "http://localhost:8080/api/v1";
 
+function isTruthyEnvValue(value: string | undefined) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return ["1", "true", "yes", "on"].includes(normalized);
+}
+
 function isLocalHostname(hostname: string) {
   const normalizedHostname = String(hostname || "").trim().toLowerCase();
   return (
@@ -791,8 +796,20 @@ function dedupeBaseUrls(urls: Array<string | null | undefined>) {
 }
 
 export function getAdminApiBaseUrls() {
-  const configuredBaseUrl =
+  const legacyBaseUrl =
     process.env.NEXT_PUBLIC_ADMIN_API_BASE_URL?.trim() || "";
+  const devBaseUrl = process.env.NEXT_PUBLIC_DEV_BASE_URL?.trim() || legacyBaseUrl;
+  const prodBaseUrl = process.env.NEXT_PUBLIC_PROD_BASE_URL?.trim() || legacyBaseUrl;
+  const apiTarget =
+    process.env.NEXT_PUBLIC_API_TARGET?.trim().toLowerCase() || "";
+  const configuredBaseUrl =
+    apiTarget === "development"
+      ? devBaseUrl
+      : apiTarget === "production"
+        ? prodBaseUrl
+        : process.env.NODE_ENV === "production"
+          ? prodBaseUrl
+          : devBaseUrl;
 
   if (!configuredBaseUrl) {
     return dedupeBaseUrls([
@@ -844,6 +861,10 @@ export function getAdminApiBaseUrls() {
 
 export function getAdminApiBaseUrl() {
   return getAdminApiBaseUrls()[0] || DEFAULT_ADMIN_API_BASE_URL;
+}
+
+export function isSiteUnderMaintenance() {
+  return isTruthyEnvValue(process.env.NEXT_PUBLIC_SITE_MAINTENANCE);
 }
 
 async function parseJson(response: Response) {

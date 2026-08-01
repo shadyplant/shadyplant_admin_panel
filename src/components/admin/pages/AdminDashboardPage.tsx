@@ -8,10 +8,7 @@ import {
   AdminLoadingCard,
 } from "@/components/admin/AdminDataState";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
-import {
-  AdminPanel,
-  AdminStatusPill,
-} from "@/components/admin/AdminUi";
+import { AdminPanel, AdminStatusPill } from "@/components/admin/AdminUi";
 import type {
   AdminCustomer,
   AdminOrder,
@@ -266,9 +263,7 @@ export default function AdminDashboardPage() {
       <div className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
         <AdminPanel className="shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
           <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-4">
-            <h2 className="text-xl font-medium text-gray-600">
-              Recent Orders
-            </h2>
+            <h2 className="text-xl font-medium text-gray-600">Recent Orders</h2>
             <Link
               href="/orders"
               className="text-sm font-medium text-gray-700 hover:text-gray-900"
@@ -393,9 +388,7 @@ export default function AdminDashboardPage() {
 
         <AdminPanel className="shadow-[0_30px_90px_rgba(0,0,0,0.05)]">
           <div className="border-b border-gray-100 pb-4">
-            <h2 className="text-xl font-medium text-gray-600">
-              Shortcuts
-            </h2>
+            <h2 className="text-xl font-medium text-gray-600">Shortcuts</h2>
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             {shortcuts.map((item) => (
@@ -407,9 +400,7 @@ export default function AdminDashboardPage() {
                 <p className="text-sm font-medium text-gray-800">
                   {item.title}
                 </p>
-                <p className="mt-1 text-sm text-gray-500">
-                  {item.count}
-                </p>
+                <p className="mt-1 text-sm text-gray-500">{item.count}</p>
               </Link>
             ))}
           </div>
