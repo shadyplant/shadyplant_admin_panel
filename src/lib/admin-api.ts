@@ -769,25 +769,6 @@ function isTruthyEnvValue(value: string | undefined) {
   return ["1", "true", "yes", "on"].includes(normalized);
 }
 
-function isLocalHostname(hostname: string) {
-  const normalizedHostname = String(hostname || "").trim().toLowerCase();
-  return (
-    normalizedHostname === "localhost" ||
-    normalizedHostname === "127.0.0.1" ||
-    normalizedHostname === "::1"
-  );
-}
-
-function buildBrowserApiBaseUrl() {
-  if (typeof window === "undefined") {
-    return DEFAULT_ADMIN_API_BASE_URL;
-  }
-
-  const protocol = window.location.protocol === "https:" ? "https:" : "http:";
-  const hostname = window.location.hostname || "localhost";
-  return `${protocol}//${hostname}:8080/api/v1`;
-}
-
 function normalizeBaseUrl(value: string) {
   return value.replace(/\/+$/, "");
 }
@@ -818,68 +799,34 @@ function dedupeBaseUrls(urls: Array<string | null | undefined>) {
   return normalizedUrls;
 }
 
-export function getAdminApiBaseUrls() {
+function getConfiguredAdminBaseUrl() {
   const legacyBaseUrl =
     process.env.NEXT_PUBLIC_ADMIN_API_BASE_URL?.trim() || "";
   const devBaseUrl = process.env.NEXT_PUBLIC_DEV_BASE_URL?.trim() || legacyBaseUrl;
   const prodBaseUrl = process.env.NEXT_PUBLIC_PROD_BASE_URL?.trim() || legacyBaseUrl;
-  const apiTarget =
-    process.env.NEXT_PUBLIC_API_TARGET?.trim().toLowerCase() || "";
-  const configuredBaseUrl =
-    apiTarget === "development"
-      ? devBaseUrl
-      : apiTarget === "production"
-        ? prodBaseUrl
-        : process.env.NODE_ENV === "production"
-          ? prodBaseUrl
-          : devBaseUrl;
+  const apiTarget = process.env.NEXT_PUBLIC_API_TARGET?.trim().toLowerCase() || "";
+  const isProductionTarget =
+    apiTarget === "production" || process.env.NODE_ENV === "production";
+
+  return isProductionTarget ? prodBaseUrl : devBaseUrl;
+}
+
+export function getAdminApiBaseUrls() {
+  const configuredBaseUrl = getConfiguredAdminBaseUrl();
 
   if (!configuredBaseUrl) {
-    return dedupeBaseUrls([
-      typeof window === "undefined"
-        ? DEFAULT_ADMIN_API_BASE_URL
-        : buildBrowserApiBaseUrl(),
-      DEFAULT_ADMIN_API_BASE_URL,
-    ]);
+    if (process.env.NODE_ENV === "production") {
+      return [];
+    }
+
+    return dedupeBaseUrls([DEFAULT_ADMIN_API_BASE_URL]);
   }
 
   if (configuredBaseUrl.startsWith("/")) {
-    return dedupeBaseUrls([
-      buildSameOriginApiBaseUrl(configuredBaseUrl),
-      typeof window === "undefined" ? null : buildBrowserApiBaseUrl(),
-      DEFAULT_ADMIN_API_BASE_URL,
-    ]);
+    return dedupeBaseUrls([buildSameOriginApiBaseUrl(configuredBaseUrl)]);
   }
 
-  if (typeof window === "undefined") {
-    return [normalizeBaseUrl(configuredBaseUrl)];
-  }
-
-  try {
-    const parsedUrl = new URL(configuredBaseUrl);
-    const normalizedConfiguredUrl = normalizeBaseUrl(configuredBaseUrl);
-
-    if (!isLocalHostname(parsedUrl.hostname) || isLocalHostname(window.location.hostname)) {
-      return dedupeBaseUrls([normalizedConfiguredUrl, DEFAULT_ADMIN_API_BASE_URL]);
-    }
-
-    parsedUrl.hostname = window.location.hostname;
-    if (!parsedUrl.port) {
-      parsedUrl.port = "8080";
-    }
-
-    return dedupeBaseUrls([
-      normalizeBaseUrl(parsedUrl.toString()),
-      normalizedConfiguredUrl,
-      DEFAULT_ADMIN_API_BASE_URL,
-    ]);
-  } catch {
-    return dedupeBaseUrls([
-      buildSameOriginApiBaseUrl(configuredBaseUrl),
-      buildBrowserApiBaseUrl(),
-      DEFAULT_ADMIN_API_BASE_URL,
-    ]);
-  }
+  return dedupeBaseUrls([normalizeBaseUrl(configuredBaseUrl)]);
 }
 
 export function getAdminApiBaseUrl() {
@@ -921,6 +868,14 @@ export async function adminRequest<T>(
   init: RequestInit = {},
   token?: string | null,
 ): Promise<T> {
+  const baseUrls = getAdminApiBaseUrls();
+
+  if (!baseUrls.length) {
+    throw new Error(
+      "Admin API base URL is not configured. Set NEXT_PUBLIC_PROD_BASE_URL in Vercel for production.",
+    );
+  }
+
   const headers = new Headers(init.headers);
 
   if (!headers.has("Accept")) {
@@ -935,7 +890,6 @@ export async function adminRequest<T>(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const baseUrls = getAdminApiBaseUrls();
   let lastError: AdminApiError | Error | null = null;
 
   for (const baseUrl of baseUrls) {

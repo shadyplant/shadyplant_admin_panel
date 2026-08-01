@@ -14,6 +14,9 @@ type SetupStatusResponse = ApiResponse<{ isSetupComplete: boolean }>;
 type SetupResponse = ApiResponse<{
   staff: AdminStaff;
   expiresIn: string;
+  token?: string;
+  accessToken?: string;
+  authToken?: string;
 }>;
 
 export default function LoginPage() {
@@ -89,7 +92,13 @@ export default function LoginPage() {
           },
         );
 
-        setSession(response.data.staff);
+        setSession(
+          response.data.staff,
+          response.data.token ||
+            response.data.accessToken ||
+            response.data.authToken ||
+            null,
+        );
         setSetupRequired(false);
       } else {
         await login(email.trim(), password);
