@@ -18,7 +18,7 @@ import {
   AdminStatusPill,
   AdminTextInput,
 } from "@/components/admin/AdminUi";
-import type { AdminOrder, ApiResponse } from "@/lib/admin-api";
+import { normalizeAdminOrder, type AdminOrder, type ApiResponse } from "@/lib/admin-api";
 import {
   formatAdminCurrency,
   formatCompactDate,
@@ -126,6 +126,34 @@ function formatOrderStatusLabel(status: string | null | undefined) {
 function getOrderTimestamp(order: AdminOrder) {
   const timestamp = new Date(order.createdAt).getTime();
   return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+function logOrdersResponse(label: string, data: unknown) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const responseData = data as {
+    orders?: Array<Record<string, unknown>>;
+    pagination?: Record<string, unknown>;
+    [key: string]: unknown;
+  } | null;
+  const firstOrder = Array.isArray(responseData?.orders)
+    ? responseData.orders[0] || null
+    : null;
+
+  console.groupCollapsed(`[OrdersPage] ${label}`);
+  console.log("response data:", responseData);
+  console.log("response keys:", Object.keys(responseData || {}));
+  console.log("orders is array:", Array.isArray(responseData?.orders));
+  console.log("orders count:", responseData?.orders?.length || 0);
+  console.log("first order raw:", firstOrder);
+  console.log(
+    "first order keys:",
+    firstOrder ? Object.keys(firstOrder) : [],
+  );
+  console.log("pagination:", responseData?.pagination || null);
+  console.groupEnd();
 }
 
 function isOrderWithinDateRange(
@@ -377,13 +405,26 @@ export default function OrdersPage() {
         await authorizedRequest<ApiResponse<{ orders: AdminOrder[] }>>(
           "/admin/orders",
         );
-      setOrders(response.data.orders);
+      logOrdersResponse("loadOrders response", response.data);
+      setOrders(
+        response.data.orders.map((order, index) =>
+          normalizeAdminOrder(order as Record<string, unknown>, index),
+        ),
+      );
       setStatusDrafts(
         Object.fromEntries(
-          response.data.orders.map((order) => [
-            order.id,
-            String(order.currentStatus || "placed").trim() || "placed",
-          ]),
+          response.data.orders.map((order, index) => {
+            const normalizedOrder = normalizeAdminOrder(
+              order as Record<string, unknown>,
+              index,
+            );
+
+            return [
+              normalizedOrder.id,
+              String(normalizedOrder.currentStatus || "placed").trim() ||
+                "placed",
+            ];
+          }),
         ),
       );
     } catch (nextError) {
@@ -426,10 +467,14 @@ export default function OrdersPage() {
           },
         );
 
-      syncOrderState(response.data.order);
+      const updatedOrder = normalizeAdminOrder(
+        response.data.order as Record<string, unknown>,
+      );
+
+      syncOrderState(updatedOrder);
       setActionFeedback({
         type: "success",
-        text: `Order ${response.data.order.orderNumber} updated to ${formatOrderStatusLabel(response.data.order.currentStatus || nextStatus)}.`,
+        text: `Order ${updatedOrder.orderNumber} updated to ${formatOrderStatusLabel(updatedOrder.currentStatus || nextStatus)}.`,
       });
     } catch (nextError) {
       setActionFeedback({
@@ -492,10 +537,14 @@ export default function OrdersPage() {
           },
         );
 
-      syncOrderState(response.data.order);
+      const updatedOrder = normalizeAdminOrder(
+        response.data.order as Record<string, unknown>,
+      );
+
+      syncOrderState(updatedOrder);
       setActionFeedback({
         type: "success",
-        text: `Order ${response.data.order.orderNumber} updated to ${formatOrderStatusLabel(response.data.order.currentStatus || actionModal.nextStatus)}.`,
+        text: `Order ${updatedOrder.orderNumber} updated to ${formatOrderStatusLabel(updatedOrder.currentStatus || actionModal.nextStatus)}.`,
       });
       closeActionModal();
     } catch (nextError) {
@@ -525,13 +574,26 @@ export default function OrdersPage() {
           );
 
         if (!cancelled) {
-          setOrders(response.data.orders);
+          logOrdersResponse("syncOrders response", response.data);
+          setOrders(
+            response.data.orders.map((order, index) =>
+              normalizeAdminOrder(order as Record<string, unknown>, index),
+            ),
+          );
           setStatusDrafts(
             Object.fromEntries(
-              response.data.orders.map((order) => [
-                order.id,
-                String(order.currentStatus || "placed").trim() || "placed",
-              ]),
+              response.data.orders.map((order, index) => {
+                const normalizedOrder = normalizeAdminOrder(
+                  order as Record<string, unknown>,
+                  index,
+                );
+
+                return [
+                  normalizedOrder.id,
+                  String(normalizedOrder.currentStatus || "placed").trim() ||
+                    "placed",
+                ];
+              }),
             ),
           );
         }

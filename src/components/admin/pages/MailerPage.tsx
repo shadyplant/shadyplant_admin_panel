@@ -947,7 +947,7 @@ export default function MailerPage() {
                 <AdminActionButton
                   type="submit"
                   disabled={sending}
-                  className="min-w-[180px] !bg-gray-800 px-6 py-3 !text-white hover:!bg-gray-700"
+                  className="min-w-[180px] !bg-[#207958] px-6 py-3 !text-white hover:!bg-gray-700"
                 >
                   {sending
                     ? "Sending..."

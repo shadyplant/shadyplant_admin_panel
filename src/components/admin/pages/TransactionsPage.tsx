@@ -312,7 +312,7 @@ export default function TransactionsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedTransactions.map((transaction) => {
+                  {paginatedTransactions.map((transaction, index) => {
                     const title =
                       transaction.orderNumber ||
                       transaction.paymentAttemptId ||
@@ -325,7 +325,7 @@ export default function TransactionsPage() {
 
                     return (
                       <tr
-                        key={transaction.id}
+                        key={`${transaction.id || transaction.paymentAttemptId || transaction.orderId || transaction.sourceType || "transaction"}-${index}`}
                         className="border-b border-gray-100 align-top transition hover:bg-gray-50"
                       >
                         <td className="px-4 py-4">

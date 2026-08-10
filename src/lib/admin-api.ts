@@ -453,6 +453,358 @@ export type AdminOrder = {
   updatedAt?: string;
 };
 
+type AdminOrderPayload = Partial<AdminOrder> &
+  Record<string, unknown>;
+
+function unwrapAdminOrderPayload(source: AdminOrderPayload): AdminOrderPayload {
+  for (const key of ["order", "data", "record", "payload", "item"]) {
+    const nestedValue = source[key];
+
+    if (nestedValue && typeof nestedValue === "object" && !Array.isArray(nestedValue)) {
+      return {
+        ...source,
+        ...(nestedValue as Record<string, unknown>),
+      };
+    }
+  }
+
+  return source;
+}
+
+function readStringField(
+  source: AdminOrderPayload,
+  keys: string[],
+): string {
+  for (const key of keys) {
+    const value = source[key];
+
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+  }
+
+  return "";
+}
+
+function readRecordField(
+  source: AdminOrderPayload,
+  keys: string[],
+): Record<string, unknown> {
+  for (const key of keys) {
+    const value = source[key];
+
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      return value as Record<string, unknown>;
+    }
+  }
+
+  return {};
+}
+
+function readArrayField(
+  source: AdminOrderPayload,
+  keys: string[],
+): Array<Record<string, unknown>> {
+  for (const key of keys) {
+    const value = source[key];
+
+    if (Array.isArray(value)) {
+      return value as Array<Record<string, unknown>>;
+    }
+  }
+
+  return [];
+}
+
+function readNumberField(source: AdminOrderPayload, keys: string[]): number {
+  for (const key of keys) {
+    const value = source[key];
+    const amount = Number(value);
+
+    if (Number.isFinite(amount)) {
+      return amount;
+    }
+  }
+
+  return 0;
+}
+
+function normalizeOrderStage(value: unknown) {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_")
+    .replaceAll(" ", "_");
+
+  if (
+    normalized === "placed" ||
+    normalized === "order_placed" ||
+    normalized === "pending" ||
+    normalized === "processing" ||
+    normalized === "pay_on_delivery" ||
+    normalized === "paid"
+  ) {
+    return "placed";
+  }
+
+  if (normalized === "confirmed" || normalized === "order_confirmed") {
+    return "confirmed";
+  }
+
+  if (normalized === "shipped") {
+    return "shipped";
+  }
+
+  if (
+    normalized === "out_for_delivery" ||
+    normalized === "outfordelivery"
+  ) {
+    return "out_for_delivery";
+  }
+
+  if (normalized === "delivered") {
+    return "delivered";
+  }
+
+  if (normalized === "cancelled" || normalized === "canceled") {
+    return "cancelled";
+  }
+
+  if (normalized === "refunded") {
+    return "refunded";
+  }
+
+  return normalized;
+}
+
+export function normalizeAdminOrder(
+  order: AdminOrderPayload,
+  index = 0,
+): AdminOrder {
+  const source = unwrapAdminOrderPayload(order);
+  const id =
+    readStringField(source, ["id", "orderId", "order_id", "_id"]) ||
+    `legacy-order-${index + 1}`;
+  const orderNumber =
+    readStringField(source, [
+      "orderNumber",
+      "order_number",
+      "orderNo",
+      "order_no",
+      "invoiceNo",
+      "invoice_no",
+    ]) ||
+    readStringField(source, ["trackingCode", "tracking_code"]) ||
+    id;
+  const trackingCode = readStringField(source, [
+    "trackingCode",
+    "tracking_code",
+    "trackingNumber",
+    "tracking_number",
+  ]);
+  const fullName = readStringField(source, [
+    "fullName",
+    "full_name",
+    "customerName",
+    "customer_name",
+    "name",
+  ]);
+  const email = readStringField(source, [
+    "email",
+    "customerEmail",
+    "customer_email",
+  ]);
+  const phoneNumber = readStringField(source, [
+    "phoneNumber",
+    "phone_number",
+    "customerPhone",
+    "customer_phone",
+    "phone",
+  ]);
+  const deliveryAddress = readRecordField(source, [
+    "deliveryAddress",
+    "delivery_address",
+  ]);
+  const billingDetails = readRecordField(source, [
+    "billingDetails",
+    "billing_details",
+  ]);
+  const deliveryLocation = readRecordField(source, [
+    "deliveryLocation",
+    "delivery_location",
+  ]);
+  const vehicle = readRecordField(source, ["vehicle"]);
+  const orderItems = readArrayField(source, ["orderItems", "order_items"]);
+  const recommendedItems = readArrayField(source, [
+    "recommendedItems",
+    "recommended_items",
+  ]);
+  const paymentDetails = readRecordField(source, [
+    "paymentDetails",
+    "payment_details",
+  ]);
+  const pricingSource = readRecordField(source, ["pricing"]);
+  const pricingFallbackTotal = readNumberField(source, [
+    "grandTotal",
+    "finalAmount",
+    "totalAmount",
+    "total",
+    "payableAmount",
+  ]);
+  const pricing = {
+    ...pricingSource,
+    total:
+      readNumberField(pricingSource as AdminOrderPayload, [
+        "grandTotal",
+        "finalAmount",
+        "totalAmount",
+        "total",
+        "payableAmount",
+        "subtotal",
+      ]) ||
+      pricingFallbackTotal,
+    grandTotal:
+      readNumberField(pricingSource as AdminOrderPayload, [
+        "grandTotal",
+        "total",
+        "finalAmount",
+        "totalAmount",
+      ]) || pricingFallbackTotal,
+    finalAmount:
+      readNumberField(pricingSource as AdminOrderPayload, [
+        "finalAmount",
+        "grandTotal",
+        "total",
+      ]) || pricingFallbackTotal,
+    totalAmount:
+      readNumberField(pricingSource as AdminOrderPayload, [
+        "totalAmount",
+        "grandTotal",
+        "total",
+      ]) || pricingFallbackTotal,
+    subtotal:
+      readNumberField(pricingSource as AdminOrderPayload, [
+        "subtotal",
+        "grandTotal",
+        "total",
+      ]) || pricingFallbackTotal,
+    deliveryCharge:
+      readNumberField(pricingSource as AdminOrderPayload, [
+        "deliveryCharge",
+        "shippingSubtotal",
+        "transportCharge",
+        "shippingCharge",
+        "deliveryAmount",
+      ]) ||
+      readNumberField(source, [
+        "deliveryCharge",
+        "shippingSubtotal",
+        "transportCharge",
+        "shippingCharge",
+        "deliveryAmount",
+      ]),
+    shippingCharge:
+      readNumberField(pricingSource as AdminOrderPayload, [
+        "shippingCharge",
+        "deliveryCharge",
+      ]) || readNumberField(source, ["shippingCharge", "deliveryCharge"]),
+  };
+  const paymentMethod = readStringField(source, [
+    "paymentMethod",
+    "payment_method",
+  ]);
+  const paymentStatus = readStringField(source, [
+    "paymentStatus",
+    "payment_status",
+  ]);
+  const currentStatus =
+    normalizeOrderStage(
+      readStringField(source, [
+        "currentStatus",
+        "current_status",
+        "status",
+        "orderStatus",
+        "order_status",
+        "state",
+      ]) ||
+        (paymentStatus === "pay_on_delivery" ||
+        paymentStatus === "paid" ||
+        paymentStatus === "awaiting_confirmation"
+          ? "placed"
+          : ""),
+    ) || "placed";
+
+  return {
+    id,
+    orderNumber,
+    trackingCode,
+    fullName,
+    email,
+    phoneNumber,
+    deliveryAddress,
+    deliveryDate: readStringField(order, [
+      "deliveryDate",
+      "delivery_date",
+      "createdAt",
+      "created_at",
+    ]),
+    quantitySqft: readNumberField(order, [
+      "quantitySqft",
+      "quantity_sqft",
+      "quantity",
+    ]),
+    distanceKm: readNumberField(order, ["distanceKm", "distance_km", "distance"]),
+    vehicle,
+    orderItems,
+    billingDetails,
+    deliveryLocation,
+    paymentMethod,
+    paymentMethodLabel: readStringField(order, [
+      "paymentMethodLabel",
+      "payment_method_label",
+    ]),
+    paymentStatus,
+    paymentStatusLabel: readStringField(order, [
+      "paymentStatusLabel",
+      "payment_status_label",
+    ]),
+    paymentDetails,
+    refundAccountDetails: (order.refundAccountDetails as AdminOrder["refundAccountDetails"]) || null,
+    refundRequestStatus:
+      (order.refundRequestStatus as AdminOrder["refundRequestStatus"]) || null,
+    refundRequestNote: readStringField(order, ["refundRequestNote", "refund_request_note"]),
+    refundSubmittedAt:
+      readStringField(order, ["refundSubmittedAt", "refund_submitted_at"]) || null,
+    refundResubmitRequestedAt:
+      readStringField(order, ["refundResubmitRequestedAt", "refund_resubmit_requested_at"]) || null,
+    currentStatus,
+    cancellationReason: readStringField(source, [
+      "cancellationReason",
+      "cancellation_reason",
+    ]),
+    cancellationNote: readStringField(source, [
+      "cancellationNote",
+      "cancellation_note",
+    ]),
+    cancelledAt:
+      readStringField(source, ["cancelledAt", "cancelled_at"]) || null,
+    refundReason: readStringField(source, ["refundReason", "refund_reason"]),
+    refundedAt: readStringField(source, ["refundedAt", "refunded_at"]) || null,
+    pricing,
+    trackingTimeline: readArrayField(source, [
+      "trackingTimeline",
+      "tracking_timeline",
+    ]) as AdminOrder["trackingTimeline"],
+    recommendedItems,
+    createdAt: readStringField(source, ["createdAt", "created_at"]),
+    updatedAt: readStringField(source, ["updatedAt", "updated_at"]) || undefined,
+  };
+}
+
 export type AdminOrderTrackingEntry = {
   id: string;
   message: string;
@@ -671,6 +1023,7 @@ export type AdminPaymentCheckout = {
   merchantOrderId: string;
   gatewayOrderId: string;
   redirectUrl: string;
+  qrCodeDataUrl?: string;
   paymentSessionId?: string;
   amount: number;
   currency: string;

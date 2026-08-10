@@ -9,14 +9,15 @@ import {
 } from "@/components/admin/AdminDataState";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { AdminPanel, AdminStatusPill } from "@/components/admin/AdminUi";
-import type {
-  AdminCustomer,
-  AdminOrder,
-  AdminProduct,
-  AdminReview,
-  AdminService,
-  AdminStaff,
-  ApiResponse,
+import {
+  normalizeAdminOrder,
+  type AdminCustomer,
+  type AdminOrder,
+  type AdminProduct,
+  type AdminReview,
+  type AdminService,
+  type AdminStaff,
+  type ApiResponse,
 } from "@/lib/admin-api";
 import {
   formatAdminCurrency,
@@ -73,7 +74,9 @@ export default function AdminDashboardPage() {
       setState({
         products: productsResponse.data.products,
         services: servicesResponse.data.services,
-        orders: ordersResponse.data.orders,
+        orders: ordersResponse.data.orders.map((order, index) =>
+          normalizeAdminOrder(order as Record<string, unknown>, index),
+        ),
         customers: customersResponse.data.customers,
         reviews: reviewsResponse.data.reviews,
         staff: staffResponse.data.staff,
@@ -132,7 +135,9 @@ export default function AdminDashboardPage() {
         setState({
           products: productsResponse.data.products,
           services: servicesResponse.data.services,
-          orders: ordersResponse.data.orders,
+          orders: ordersResponse.data.orders.map((order, index) =>
+            normalizeAdminOrder(order as Record<string, unknown>, index),
+          ),
           customers: customersResponse.data.customers,
           reviews: reviewsResponse.data.reviews,
           staff: staffResponse.data.staff,
@@ -273,9 +278,9 @@ export default function AdminDashboardPage() {
           </div>
           <div className="mt-4 space-y-2">
             {recentOrders.length ? (
-              recentOrders.map((order) => (
+              recentOrders.map((order, index) => (
                 <Link
-                  key={order.id}
+                  key={order.id || order.orderNumber || order.trackingCode || `recent-order-${index}`}
                   href={`/orders/${order.id}`}
                   className="flex flex-col gap-2 rounded-[0.85rem] px-3 py-3 transition hover:bg-gray-50 md:flex-row md:items-center md:justify-between"
                 >

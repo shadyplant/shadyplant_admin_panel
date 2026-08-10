@@ -18,7 +18,7 @@ export function AdminPanel({
   return (
     <section
       {...props}
-      className={`rounded-xl p-4 ${className}`}
+      className={`rounded-xl p-1 ${className}`}
     >
       {children}
     </section>
@@ -150,7 +150,7 @@ export function AdminActionButton({
   return (
     <button
       {...props}
-      className={`inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${toneClassName} ${className}`}
+      className={`inline-flex items-center justify-center px-4 py-3 rounded-md text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${toneClassName} ${className}`}
     >
       {children}
     </button>

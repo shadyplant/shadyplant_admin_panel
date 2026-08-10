@@ -273,26 +273,26 @@ export default function ReviewsPage() {
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
-                    <h2 className="text-xl font-black tracking-[-0.04em] text-[var(--admin-ink)]">
+                    <h2 className="text-xl font-medium text-gray-800">
                       Customer review
                     </h2>
                     <AdminStatusPill status={review.status} />
                   </div>
-                  <p className="mt-2 text-sm font-semibold text-[var(--admin-muted)]">
+                  <p className="mt-2 text-sm font-semibold text-gray-800">
                     {review.authorName} | {review.authorLocation || "Location not shared"} | Product{" "}
                     {review.productId}
                   </p>
-                  <p className="mt-3 text-sm leading-7 text-[var(--admin-ink)]">
+                  <p className="mt-3 text-sm leading-7 text-gray-800">
                     {review.body}
                   </p>
-                  <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+                  <p className="mt-3 text-xs font-semibold ">
                     {review.rating}/5 rating | {review.verifiedBuyer ? "Verified buyer" : "Unverified"} |{" "}
                     {formatAdminDate(review.createdAt)}
                   </p>
 
-                  <div className="mt-5 rounded-[1rem] border border-[var(--admin-line)] bg-[var(--admin-chip)] p-4">
+                  <div className="mt-5 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
+                      <p className="text-xs font-semibold ">
                         Store reply
                       </p>
                       {review.adminReply?.updatedAt ? (
@@ -313,7 +313,7 @@ export default function ReviewsPage() {
                       className="mt-3 min-h-[120px] bg-white"
                       maxLength={1500}
                     />
-                    <p className="mt-2 text-xs text-[var(--admin-muted)]">
+                    <p className="mt-2 text-xs text-gray-500">
                       This reply is shown on the storefront under the approved review.
                     </p>
                   </div>

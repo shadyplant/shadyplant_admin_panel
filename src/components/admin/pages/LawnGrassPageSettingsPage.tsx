@@ -4,7 +4,10 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, Unlink } from "lucide-react";
 import { useAdminAuth } from "@/components/admin/AdminAuthProvider";
-import { AdminErrorCard, AdminLoadingCard } from "@/components/admin/AdminDataState";
+import {
+  AdminErrorCard,
+  AdminLoadingCard,
+} from "@/components/admin/AdminDataState";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import {
   AdminActionButton,
@@ -28,7 +31,9 @@ function formatProductLabel(product: AdminProduct) {
 
 export default function LawnGrassPageSettingsPage() {
   const { authorizedRequest } = useAdminAuth();
-  const [settings, setSettings] = useState<AdminLawnGrassPageSettings | null>(null);
+  const [settings, setSettings] = useState<AdminLawnGrassPageSettings | null>(
+    null,
+  );
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -47,10 +52,12 @@ export default function LawnGrassPageSettingsPage() {
 
     try {
       const [settingsResponse, productsResponse] = await Promise.all([
-        authorizedRequest<ApiResponse<{ settings: AdminLawnGrassPageSettings }>>(
-          "/admin/lawn-grass-page",
+        authorizedRequest<
+          ApiResponse<{ settings: AdminLawnGrassPageSettings }>
+        >("/admin/lawn-grass-page"),
+        authorizedRequest<ApiResponse<{ products: AdminProduct[] }>>(
+          "/admin/products",
         ),
-        authorizedRequest<ApiResponse<{ products: AdminProduct[] }>>("/admin/products"),
       ]);
 
       setSettings(settingsResponse.data.settings);
@@ -83,14 +90,12 @@ export default function LawnGrassPageSettingsPage() {
     setMessage("");
 
     try {
-      const response =
-        await authorizedRequest<ApiResponse<{ settings: AdminLawnGrassPageSettings }>>(
-          "/admin/lawn-grass-page",
-          {
-            method: "PATCH",
-            body: JSON.stringify({ productId }),
-          },
-        );
+      const response = await authorizedRequest<
+        ApiResponse<{ settings: AdminLawnGrassPageSettings }>
+      >("/admin/lawn-grass-page", {
+        method: "PATCH",
+        body: JSON.stringify({ productId }),
+      });
 
       setSettings(response.data.settings);
       setSelectedProductId(response.data.settings.product?.id || "");
@@ -114,7 +119,9 @@ export default function LawnGrassPageSettingsPage() {
         description="Choose the single catalog product used by the public lawn grass calculator page."
       />
 
-      {loading ? <AdminLoadingCard label="Loading lawn grass page settings..." /> : null}
+      {loading ? (
+        <AdminLoadingCard label="Loading lawn grass page settings..." />
+      ) : null}
       {!loading && error ? <AdminErrorCard message={error} /> : null}
 
       {!loading && !error ? (
@@ -125,7 +132,7 @@ export default function LawnGrassPageSettingsPage() {
           />
 
           {message ? (
-            <div className="rounded-xl border border-[var(--admin-line)] bg-[var(--admin-chip)] px-4 py-3 text-sm text-[var(--admin-ink)]">
+            <div className="rounded-xl border border-[var(--admin-line)] bg-[var(--admin-chip)] px-4 py-3 text-sm text-gray-800">
               {message}
             </div>
           ) : null}
@@ -133,7 +140,7 @@ export default function LawnGrassPageSettingsPage() {
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
             <div className="space-y-4">
               <label className="block">
-                <span className="text-sm font-semibold text-[var(--admin-ink)]">
+                <span className="text-sm font-semibold text-gray-800">
                   Select product
                 </span>
                 <AdminSelect
@@ -161,7 +168,10 @@ export default function LawnGrassPageSettingsPage() {
                         : "Lawn grass calculator product link removed.",
                     )
                   }
-                  disabled={saving || selectedProductId === (settings?.product?.id || "")}
+                  disabled={
+                    saving ||
+                    selectedProductId === (settings?.product?.id || "")
+                  }
                 >
                   {saving ? (
                     <span className="inline-flex items-center gap-2">
@@ -176,7 +186,10 @@ export default function LawnGrassPageSettingsPage() {
                   type="button"
                   tone="secondary"
                   onClick={() =>
-                    void persistProductLink("", "Lawn grass calculator product link removed.")
+                    void persistProductLink(
+                      "",
+                      "Lawn grass calculator product link removed.",
+                    )
                   }
                   disabled={saving || !settings?.product}
                 >
@@ -188,17 +201,17 @@ export default function LawnGrassPageSettingsPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-[var(--admin-line)] bg-white p-4">
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--admin-muted)]">
-                    Current product
-                  </p>
-                  <h2 className="mt-2 text-xl font-black text-[var(--admin-ink)]">
+                  <p className="text-xs font-medium">Current product</p>
+                  <h2 className="mt-2 text-base text-gray-800">
                     {settings?.product?.name || "No product linked"}
                   </h2>
                 </div>
-                <AdminStatusPill status={settings?.product ? "active" : "inactive"} />
+                <AdminStatusPill
+                  status={settings?.product ? "active" : "inactive"}
+                />
               </div>
 
               {settings?.product ? (
@@ -214,35 +227,37 @@ export default function LawnGrassPageSettingsPage() {
                       />
                     </div>
                   ) : null}
-                  <div className="grid gap-2 text-sm text-[var(--admin-muted)]">
+                  <div className="grid gap-2 text-sm text-gray-800">
                     <p>
                       Product ID:{" "}
-                      <span className="font-semibold text-[var(--admin-ink)]">
+                      <span className="font-semibold text-gray-800">
                         {settings.product.productId || settings.product.id}
                       </span>
                     </p>
                     <p>
                       Category:{" "}
-                      <span className="font-semibold text-[var(--admin-ink)]">
+                      <span className="font-semibold text-gray-800">
                         {settings.product.category || "Uncategorized"}
                       </span>
                     </p>
                     <p>
                       Price:{" "}
-                      <span className="font-semibold text-[var(--admin-ink)]">
+                      <span className="font-semibold text-gray-800">
                         Rs. {settings.product.price}
                       </span>
                     </p>
                   </div>
                 </div>
               ) : (
-                <p className="mt-4 text-sm leading-6 text-[var(--admin-muted)]">
-                  Pick a product and save it to connect the public calculator to a real catalog item.
+                <p className="mt-4 text-sm leading-6 text-gray-800">
+                  Pick a product and save it to connect the public calculator to
+                  a real catalog item.
                 </p>
               )}
 
-              {selectedProduct && selectedProduct.id !== settings?.product?.id ? (
-                <p className="mt-4 rounded-lg bg-[var(--admin-chip)] px-3 py-2 text-xs text-[var(--admin-muted)]">
+              {selectedProduct &&
+              selectedProduct.id !== settings?.product?.id ? (
+                <p className="mt-4 rounded-lg bg-[var(--admin-chip)] px-3 py-2 text-xs text-gray-800">
                   Selected: {selectedProduct.name}
                 </p>
               ) : null}

@@ -391,7 +391,7 @@ export default function CustomersPage() {
                 <option value="garden_contractor">Garden contractor</option>
               </AdminSelect>
             </div>
-            <label className="inline-flex items-center gap-3 rounded-[1rem] border border-[var(--admin-line)] bg-[#f8faf6] px-4 py-3 text-sm font-semibold text-[var(--admin-ink)]">
+            <label className="inline-flex items-center gap-3 rounded-sm border border-gray-200 bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-800">
               <input
                 type="checkbox"
                 checked={createForm.isVip}
