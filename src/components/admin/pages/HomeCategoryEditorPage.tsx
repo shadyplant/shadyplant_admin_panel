@@ -83,6 +83,7 @@ export default function HomeCategoryEditorPage({
   const [form, setForm] = useState<HomeCategoryFormState>(emptyForm);
   const [loading, setLoading] = useState(Boolean(itemId));
   const [saving, setSaving] = useState(false);
+  const [imageSaving, setImageSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -206,6 +207,57 @@ export default function HomeCategoryEditorPage({
     }
   }
 
+  async function handleImageChange(nextImage: string) {
+    setForm((current) => ({ ...current, image: nextImage }));
+
+    if (!itemId || !allowCatalogEdits) {
+      return;
+    }
+
+    setImageSaving(true);
+    setError(null);
+
+    try {
+      const nextForm = {
+        ...form,
+        image: nextImage,
+      };
+
+      const response =
+        await authorizedRequest<ApiResponse<{ item: AdminHomeCategoryItem }>>(
+          `/admin/home-categories/${itemId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify(buildPayload(nextForm)),
+          },
+        );
+
+      setForm(mapItemToForm(response.data.item));
+      showAdminSnackbar({
+        tone: "success",
+        title: "Home bar image updated",
+        body: `${response.data.item.label} image was saved successfully.`,
+      });
+      setSuccessMessage("Home bar image updated successfully.");
+    } catch (nextError) {
+      showAdminSnackbar({
+        tone: "error",
+        title: "Home bar image update failed",
+        body:
+          nextError instanceof Error
+            ? nextError.message
+            : "Unable to save home bar image right now.",
+      });
+      setError(
+        nextError instanceof Error
+          ? nextError.message
+          : "Unable to save home bar image right now.",
+      );
+    } finally {
+      setImageSaving(false);
+    }
+  }
+
   async function handleDelete() {
     if (!itemId || !allowCatalogEdits) {
       return;
@@ -302,14 +354,18 @@ export default function HomeCategoryEditorPage({
               <MediaUploadInput
                 label="Image URL"
                 value={form.image}
-                onChange={(nextImage) => setForm({ ...form, image: nextImage })}
+                onChange={(nextImage) => void handleImageChange(nextImage)}
                 entityType="home-category"
                 entityId={itemId || form.itemKey || form.label || "home-category-draft"}
                 slotKey="primary"
                 purpose="home-category-image"
                 allowEdits={allowCatalogEdits}
                 placeholder="https://..."
-                hint="Upload a category chip image to S3 or paste a hosted URL."
+                hint={
+                  imageSaving
+                    ? "Uploading and saving image..."
+                    : "Upload a category chip image to S3 or paste a hosted URL."
+                }
               />
             </FormField>
             <FormField label="Accent from">
@@ -440,9 +496,15 @@ export default function HomeCategoryEditorPage({
             <AdminActionButton
               type="submit"
               tone="primary"
-              disabled={saving || !allowCatalogEdits}
+              disabled={saving || imageSaving || !allowCatalogEdits}
             >
-              {saving ? "Saving..." : itemId ? "Save changes" : "Create item"}
+              {saving
+                ? "Saving..."
+                : imageSaving
+                  ? "Uploading..."
+                  : itemId
+                    ? "Save changes"
+                    : "Create item"}
             </AdminActionButton>
             <Link
               href="/home-categories"

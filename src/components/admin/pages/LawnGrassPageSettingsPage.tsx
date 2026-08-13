@@ -246,6 +246,12 @@ export default function LawnGrassPageSettingsPage() {
                         Rs. {settings.product.price}
                       </span>
                     </p>
+                    <p>
+                      Max purchase qty: {" "}
+                      <span className="font-semibold text-gray-800">
+                        {settings.product.maxPurchaseQuantity ?? "No limit"}
+                      </span>
+                    </p>
                   </div>
                 </div>
               ) : (

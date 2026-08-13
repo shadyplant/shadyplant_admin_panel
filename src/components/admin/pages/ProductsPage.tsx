@@ -65,6 +65,7 @@ const SPREADSHEET_COLUMNS = [
   "weight",
   "offer",
   "minOrderQuantity",
+  "maxPurchaseQuantity",
   "stock",
   "isOnTrend",
   "isFeaturedLatest",
@@ -138,6 +139,7 @@ const SPREADSHEET_HEADER_MAP: Record<string, string> = {
   weight: "weight",
   offer: "offer",
   minorderquantity: "minOrderQuantity",
+  maxpurchasequantity: "maxPurchaseQuantity",
   stock: "stock",
   isontrend: "isOnTrend",
   isfeaturedlatest: "isFeaturedLatest",
@@ -296,6 +298,7 @@ function buildSpreadsheetRow(product: AdminProduct): SpreadsheetRow {
     weight: String(product.weight ?? ""),
     offer: product.offer || "",
     minOrderQuantity: String(product.minOrderQuantity ?? 1),
+    maxPurchaseQuantity: String(product.maxPurchaseQuantity ?? ""),
     stock: String(product.stock ?? 0),
     isOnTrend: String(Boolean(product.isOnTrend)),
     isFeaturedLatest: String(Boolean(product.isFeaturedLatest)),
@@ -500,6 +503,10 @@ function buildProductPayloadFromSpreadsheetRow(
     minOrderQuantity: resolveNumber(
       "minOrderQuantity",
       existingProduct?.minOrderQuantity ?? 1,
+    ),
+    maxPurchaseQuantity: resolveNumber(
+      "maxPurchaseQuantity",
+      existingProduct?.maxPurchaseQuantity ?? undefined,
     ),
     stock: Math.max(0, resolveNumber("stock", existingProduct?.stock ?? 0)),
     isOnTrend:

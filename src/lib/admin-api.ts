@@ -39,6 +39,7 @@ export type AdminProduct = {
   weight: number;
   offer: string;
   minOrderQuantity: number;
+  maxPurchaseQuantity: number | null;
   stock: number;
   isOnTrend: boolean;
   isFeaturedLatest: boolean;

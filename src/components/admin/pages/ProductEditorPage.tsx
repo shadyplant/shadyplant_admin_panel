@@ -66,6 +66,7 @@ type ProductFormState = {
   weight: string;
   offer: string;
   minOrderQuantity: string;
+  maxPurchaseQuantity: string;
   stock: string;
   isOnTrend: boolean;
   isFeaturedLatest: boolean;
@@ -171,6 +172,7 @@ const emptyForm: ProductFormState = {
   weight: "",
   offer: "",
   minOrderQuantity: "1",
+  maxPurchaseQuantity: "",
   stock: "0",
   isOnTrend: false,
   isFeaturedLatest: false,
@@ -341,6 +343,11 @@ function mapProductToForm(product: AdminProduct): ProductFormState {
     weight: String(product.weight ?? ""),
     offer: product.offer || "",
     minOrderQuantity: String(product.minOrderQuantity ?? 1),
+    maxPurchaseQuantity:
+      product.maxPurchaseQuantity === null ||
+      product.maxPurchaseQuantity === undefined
+        ? ""
+        : String(product.maxPurchaseQuantity),
     stock: String(product.stock ?? 0),
     isOnTrend: Boolean(product.isOnTrend),
     isFeaturedLatest: Boolean(product.isFeaturedLatest),
@@ -532,6 +539,17 @@ function buildPayload(form: ProductFormState) {
       : undefined;
   };
 
+  const parseOptionalPositiveInteger = (value: string) => {
+    if (!value.trim()) {
+      return null;
+    }
+
+    const parsedValue = Math.floor(Number(value));
+    return Number.isFinite(parsedValue) && parsedValue > 0
+      ? parsedValue
+      : null;
+  };
+
   return {
     id: form.id.trim() || undefined,
     sku: form.sku.trim() || undefined,
@@ -560,6 +578,7 @@ function buildPayload(form: ProductFormState) {
     weight: Number(form.weight || 0),
     offer: form.offer.trim(),
     minOrderQuantity: Number(form.minOrderQuantity || 1),
+    maxPurchaseQuantity: parseOptionalPositiveInteger(form.maxPurchaseQuantity),
     stock: Math.max(0, Number(form.stock || 0)),
     isOnTrend: form.isOnTrend,
     isFeaturedLatest: form.isFeaturedLatest,
@@ -1961,6 +1980,21 @@ export default function ProductEditorPage({
                   }
                   className={inputClassName()}
                   required
+                />
+              </FormField>
+              <FormField label="Max purchase qty">
+                <input
+                  type="number"
+                  min="1"
+                  value={form.maxPurchaseQuantity}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      maxPurchaseQuantity: event.target.value,
+                    })
+                  }
+                  className={inputClassName()}
+                  placeholder="No limit"
                 />
               </FormField>
               <FormField label="Container size">
